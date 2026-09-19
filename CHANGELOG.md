@@ -1,0 +1,29 @@
+# Changelog
+
+Notable changes to RadioTune. Versions follow the git tags (`vX.Y.Z`); the
+Android `versionCode` is derived as `major * 10000 + minor * 100 + patch`.
+
+## [1.1.0] - 2026-09-19
+
+### Added
+
+- In-app update check against the latest GitHub release. The newest tag is read
+  from GitHub's `/releases/latest` web redirect (no `api.github.com`, no token),
+  the APK is downloaded from the release, and the system installer is opened.
+- Update prompt on launch, throttled to once every 12 hours, plus a manual
+  check action in the Countries top bar.
+- Release workflow now also publishes a stable `RadioTune-latest.apk` asset for
+  the updater, alongside the versioned `RadioTune-X.Y.Z.apk`.
+
+## [1.0.0] - 2026-09-19
+
+### Added
+
+- Browse radio stations by country, search, and paginated station lists powered
+  by the Radio Browser API.
+- Background playback through a Media3 `MediaSessionService` with a media
+  notification, audio focus handling, and pause on headphone disconnect.
+- Sleep timer with a fade-out, enforced in the player service.
+- Favorites persisted locally with DataStore.
+- Release workflow that builds a signed APK from a version tag and publishes it
+  as a GitHub Release.
