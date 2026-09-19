@@ -8,8 +8,8 @@ plugins {
 }
 
 // Version is supplied by CI from the git tag (`-PversionName` / `-PversionCode`).
-val releaseVersionName: String = (findProperty("versionName") as String?)?.takeIf { it.isNotBlank() } ?: "1.1.0"
-val releaseVersionCode: Int = (findProperty("versionCode") as String?)?.toIntOrNull() ?: 10100
+val releaseVersionName: String = (findProperty("versionName") as String?)?.takeIf { it.isNotBlank() } ?: "1.1.1"
+val releaseVersionCode: Int = (findProperty("versionCode") as String?)?.toIntOrNull() ?: 10101
 
 // Release signing is optional locally; CI injects these via environment variables.
 val releaseKeystorePath: String? = providers.environmentVariable("KEYSTORE_FILE").orNull

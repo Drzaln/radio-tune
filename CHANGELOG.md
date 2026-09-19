@@ -3,6 +3,14 @@
 Notable changes to RadioTune. Versions follow the git tags (`vX.Y.Z`); the
 Android `versionCode` is derived as `major * 10000 + minor * 100 + patch`.
 
+## [1.1.1] - 2026-09-19
+
+### Changed
+
+- Release builds are now signed with the repository's release keystore
+  (configured through Actions secrets), so in-app updates install over an
+  existing build. First release with a stable, reused signing key.
+
 ## [1.1.0] - 2026-09-19
 
 ### Added
