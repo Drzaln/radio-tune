@@ -26,6 +26,7 @@ concurrency:
 jobs:
   release:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -59,13 +60,30 @@ jobs:
           java-version: "17"
 
       - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+        run: |
+          set -euo pipefail
+          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}"
+          if [ -z "$SDK" ] || [ ! -d "$SDK" ]; then
+            SDK="/usr/local/lib/android/sdk"
+          fi
+          echo "ANDROID_HOME=$SDK" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$SDK" >> "$GITHUB_ENV"
 
-      - name: Accept Android SDK licenses
-        run: yes | sdkmanager --licenses > /dev/null 2>&1 || true
+          SDKMGR="$(find "$SDK/cmdline-tools" -name sdkmanager -type f 2>/dev/null | sort | tail -1 || true)"
+          if [ -z "$SDKMGR" ]; then
+            echo "cmdline-tools not present, downloading them."
+            mkdir -p "$SDK/cmdline-tools"
+            curl -fsSLo /tmp/cmdline-tools.zip \
+              "https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip"
+            unzip -q /tmp/cmdline-tools.zip -d "$SDK/cmdline-tools"
+            rm -rf "$SDK/cmdline-tools/latest"
+            mv "$SDK/cmdline-tools/cmdline-tools" "$SDK/cmdline-tools/latest"
+            SDKMGR="$SDK/cmdline-tools/latest/bin/sdkmanager"
+          fi
+          echo "$(dirname "$SDKMGR")" >> "$GITHUB_PATH"
 
-      - name: Install Android SDK packages
-        run: sdkmanager "platforms;android-36" "build-tools;36.0.0" > /dev/null
+          yes | "$SDKMGR" --licenses > /dev/null 2>&1 || true
+          "$SDKMGR" "platforms;android-36" "build-tools;36.0.0" > /dev/null
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
@@ -115,7 +133,7 @@ jobs:
           SRC="app/build/outputs/apk/release/app-release.apk"
           DEST="RadioTune-${{ steps.version.outputs.name }}.apk"
           cp "$SRC" "$DEST"
-          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -name apksigner | sort | tail -1)"
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort | tail -1)"
           "$APKSIGNER" verify --print-certs "$DEST" | head -3
           echo "sha256=$(sha256sum "$DEST" | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
           echo "file=$DEST" >> "$GITHUB_OUTPUT"
@@ -134,6 +152,6 @@ jobs:
           body: |
             RadioTune ${{ steps.version.outputs.name }}
 
-            Signed release APK (minSdk 24, arm64/arm32/x86_64).
+            Signed release APK (minSdk 24).
 
             SHA-256: `${{ steps.apk.outputs.sha256 }}`
