@@ -10,6 +10,7 @@ import com.rizal.radiotune.ui.countries.CountriesViewModel
 import com.rizal.radiotune.ui.favorites.FavoritesViewModel
 import com.rizal.radiotune.ui.player.PlayerViewModel
 import com.rizal.radiotune.ui.stations.StationsViewModel
+import com.rizal.radiotune.ui.update.UpdateViewModel
 
 object AppViewModelProvider {
 
@@ -30,6 +31,9 @@ object AppViewModelProvider {
         }
         initializer {
             StationsViewModel(app().container.radioRepository, createSavedStateHandle())
+        }
+        initializer {
+            UpdateViewModel(app().container.updateRepository)
         }
     }
 }

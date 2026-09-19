@@ -10,6 +10,7 @@ Guidance for agents working in this repository.
 - Background playback via Media3 `MediaSessionService` + media notification
 - Sleep timer with fade-out, enforced in the service
 - Favorites persisted locally with DataStore
+- In-app update check against the latest GitHub release (no API token)
 
 ## Stack
 
@@ -52,6 +53,7 @@ data/
   repository/    RadioRepository (network + in-memory cache), FavoritesRepository
   local/         DataStore preferences
   model/         Station, Country
+  update/        UpdateChecker, ApkDownloader, ApkInstaller, UpdateRepository
 playback/
   RadioPlayerService   MediaSessionService + ExoPlayer + sleep timer
   PlayerController     app-scoped MediaController bridge, exposes PlayerUiState
@@ -70,6 +72,23 @@ Key files and tuning points:
 - Cache TTL: `data/repository/RadioRepository.kt` (companion constants)
 - Sleep presets: `ui/player/PlayerScreen.kt` → `SleepTimerOptions`
 - Radio Browser click/stream resolution: `RadioRepository.registerClick`
+- Update source + asset names: `data/update/UpdateConfig.kt`
+- Update check throttle: `data/update/UpdateRepository.kt` (`CHECK_INTERVAL_MS`, 12h)
+
+## In-app updates
+
+No `api.github.com` and no token. `UpdateChecker` issues a `HEAD`-style GET to
+`https://github.com/<owner>/<repo>/releases/latest` with redirects disabled and
+reads the `Location` header (`/releases/tag/vX.Y.Z`) to learn the version. The
+APK is fetched from `.../releases/latest/download/RadioTune-latest.apk`, falling
+back to the versioned `RadioTune-<version>.apk` for older releases.
+
+The version check maps to the workflow's scheme: `1.2.3` → `10203`.
+
+Install hand-off uses `FileProvider` (`${applicationId}.fileprovider`,
+`res/xml/file_paths.xml`) plus `REQUEST_INSTALL_PACKAGES`. The user still confirms
+the install, and enables "install unknown apps" the first time. An update prompt
+appears on launch (throttled); the Countries top bar has a manual check button.
 
 ## CI / release
 
@@ -81,7 +100,9 @@ Key files and tuning points:
 - Signs with repo secrets `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`,
   `KEY_PASSWORD`. Falls back to a throwaway keystore (with a warning) when
   `KEYSTORE_BASE64` is absent.
-- Publishes a GitHub Release with the APK attached.
+- Publishes a GitHub Release with two assets: the versioned
+  `RadioTune-X.Y.Z.apk` and the stable `RadioTune-latest.apk` used by the
+  in-app updater.
 
 Do not poll the GitHub API for run status; the user checks the Actions tab.
 

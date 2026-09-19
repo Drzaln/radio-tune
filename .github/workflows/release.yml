@@ -132,12 +132,13 @@ jobs:
           set -euo pipefail
           SRC="app/build/outputs/apk/release/app-release.apk"
           DEST="RadioTune-${{ steps.version.outputs.name }}.apk"
+          STABLE="RadioTune-latest.apk"
           cp "$SRC" "$DEST"
+          cp "$SRC" "$STABLE"
           APKSIGNER="$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort | tail -1)"
           "$APKSIGNER" verify --print-certs "$DEST" | head -3
           echo "sha256=$(sha256sum "$DEST" | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
-          echo "file=$DEST" >> "$GITHUB_OUTPUT"
-          ls -lh "$DEST"
+          ls -lh "$DEST" "$STABLE"
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
@@ -148,7 +149,9 @@ jobs:
           draft: ${{ github.event_name == 'workflow_dispatch' && inputs.draft || false }}
           generate_release_notes: true
           fail_on_unmatched_files: true
-          files: ${{ steps.apk.outputs.file }}
+          files: |
+            RadioTune-${{ steps.version.outputs.name }}.apk
+            RadioTune-latest.apk
           body: |
             RadioTune ${{ steps.version.outputs.name }}
 

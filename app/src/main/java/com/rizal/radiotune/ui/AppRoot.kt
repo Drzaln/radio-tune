@@ -40,6 +40,8 @@ import com.rizal.radiotune.ui.favorites.FavoritesScreen
 import com.rizal.radiotune.ui.player.PlayerScreen
 import com.rizal.radiotune.ui.player.PlayerViewModel
 import com.rizal.radiotune.ui.stations.StationsScreen
+import com.rizal.radiotune.ui.update.UpdateDialog
+import com.rizal.radiotune.ui.update.UpdateViewModel
 
 private object Routes {
     const val COUNTRIES = "countries"
@@ -59,11 +61,26 @@ fun AppRoot(modifier: Modifier = Modifier) {
     val favorites by playerViewModel.favorites.collectAsStateWithLifecycle()
     val favoriteIds = remember(favorites) { favorites.map { it.id }.toSet() }
 
+    val updateViewModel: UpdateViewModel = viewModel(factory = AppViewModelProvider.Factory)
+    val updateState by updateViewModel.state.collectAsStateWithLifecycle()
+
     val snackbarHostState = remember { SnackbarHostState() }
     LaunchedEffect(playerState.errorMessage) {
         playerState.errorMessage?.let { message ->
             snackbarHostState.showSnackbar(message)
             playerViewModel.dismissError()
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        updateViewModel.checkOnLaunch()
+    }
+
+    LaunchedEffect(updateState.message, updateState.error) {
+        val notice = updateState.message ?: updateState.error
+        if (notice != null) {
+            snackbarHostState.showSnackbar(notice)
+            updateViewModel.consumeMessage()
         }
     }
 
@@ -118,6 +135,7 @@ fun AppRoot(modifier: Modifier = Modifier) {
                     onCountryClick = { country ->
                         navController.navigate(Routes.stations(country.code, country.name))
                     },
+                    onCheckForUpdates = updateViewModel::checkNow,
                 )
             }
 
@@ -163,6 +181,12 @@ fun AppRoot(modifier: Modifier = Modifier) {
             }
         }
     }
+
+    UpdateDialog(
+        state = updateState,
+        onInstall = updateViewModel::install,
+        onDismiss = updateViewModel::dismiss,
+    )
 }
 
 private fun NavHostController.switchTab(route: String) {

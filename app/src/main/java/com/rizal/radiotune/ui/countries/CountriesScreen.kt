@@ -9,6 +9,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -16,9 +18,11 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.rizal.radiotune.R
 import com.rizal.radiotune.data.model.Country
 import com.rizal.radiotune.ui.AppViewModelProvider
 import com.rizal.radiotune.ui.components.EmptyView
@@ -30,13 +34,24 @@ import com.rizal.radiotune.ui.components.SearchField
 @Composable
 fun CountriesScreen(
     onCountryClick: (Country) -> Unit,
+    onCheckForUpdates: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val viewModel: CountriesViewModel = viewModel(factory = AppViewModelProvider.Factory)
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     Column(modifier.fillMaxSize()) {
-        TopAppBar(title = { Text("RadioTune") })
+        TopAppBar(
+            title = { Text("RadioTune") },
+            actions = {
+                IconButton(onClick = onCheckForUpdates) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_download),
+                        contentDescription = "Check for updates",
+                    )
+                }
+            },
+        )
 
         SearchField(
             value = state.query,

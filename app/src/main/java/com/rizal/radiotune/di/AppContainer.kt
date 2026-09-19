@@ -5,6 +5,9 @@ import com.rizal.radiotune.data.local.dataStore
 import com.rizal.radiotune.data.remote.NetworkFactory
 import com.rizal.radiotune.data.repository.FavoritesRepository
 import com.rizal.radiotune.data.repository.RadioRepository
+import com.rizal.radiotune.data.update.ApkDownloader
+import com.rizal.radiotune.data.update.UpdateChecker
+import com.rizal.radiotune.data.update.UpdateRepository
 import com.rizal.radiotune.playback.PlayerController
 import kotlinx.serialization.json.Json
 
@@ -25,4 +28,13 @@ class AppContainer(context: Context) {
     }
 
     val playerController: PlayerController by lazy { PlayerController(appContext, json) }
+
+    val updateRepository: UpdateRepository by lazy {
+        UpdateRepository(
+            context = appContext,
+            checker = UpdateChecker(okHttpClient),
+            downloader = ApkDownloader(okHttpClient, appContext),
+            dataStore = appContext.dataStore,
+        )
+    }
 }
