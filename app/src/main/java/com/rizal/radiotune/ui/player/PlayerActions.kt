@@ -18,5 +18,5 @@ data class PlayerActions(
     val onScan: () -> Unit,
     val onSetSleepTimer: (Int?) -> Unit,
     val onCycleSleepTimer: () -> Unit,
-    val onVolumeDelta: (Float) -> Unit,
+    val onSetVolume: (Float) -> Unit,
 )

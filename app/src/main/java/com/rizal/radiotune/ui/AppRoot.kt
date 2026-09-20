@@ -197,7 +197,7 @@ fun AppRoot(modifier: Modifier = Modifier) {
                         onScan = playerViewModel::scan,
                         onSetSleepTimer = playerViewModel::setSleepTimer,
                         onCycleSleepTimer = playerViewModel::cycleSleepTimer,
-                        onVolumeDelta = playerViewModel::nudgeVolume,
+                        onSetVolume = playerViewModel::setVolume,
                     ),
                 )
             }

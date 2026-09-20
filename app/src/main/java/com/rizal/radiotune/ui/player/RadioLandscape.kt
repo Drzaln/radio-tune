@@ -4,7 +4,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -39,11 +39,10 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.rizal.radiotune.R
 import com.rizal.radiotune.data.model.Station
@@ -52,6 +51,7 @@ import com.rizal.radiotune.ui.components.CASSETTE_ASPECT
 import com.rizal.radiotune.ui.components.CassettePlayer
 import com.rizal.radiotune.ui.theme.PlayerSkin
 import com.rizal.radiotune.ui.theme.PlayerStyle
+import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -81,16 +81,6 @@ fun RadioLandscape(
                 )
             }
             Spacer(Modifier.weight(1f))
-            Text(
-                text = station?.name ?: "RadioTune",
-                style = MaterialTheme.typography.labelLarge,
-                color = skin.mutedContent,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(2f, fill = false),
-                textAlign = TextAlign.Center,
-            )
-            Spacer(Modifier.weight(1f))
             IconButton(onClick = { showStylePicker = true }) {
                 Icon(
                     painter = painterResource(R.drawable.ic_palette),
@@ -108,7 +98,7 @@ fun RadioLandscape(
                 modifier = Modifier.weight(1f).fillMaxHeight(),
                 contentAlignment = Alignment.Center,
             ) {
-                val cassetteWidth = minOf(maxWidth * 0.94f, maxHeight * 0.94f / CASSETTE_ASPECT)
+                val cassetteWidth = minOf(maxWidth * 0.74f, maxHeight * 0.74f / CASSETTE_ASPECT)
                 CassettePlayer(
                     look = skin.cassette,
                     playing = state.isPlaying,
@@ -141,7 +131,7 @@ fun RadioLandscape(
                     VolumeKnob(
                         volume = state.volume,
                         skin = skin,
-                        onDelta = actions.onVolumeDelta,
+                        onSet = actions.onSetVolume,
                     )
                 }
 
@@ -256,7 +246,7 @@ private fun TuningScale(skin: PlayerSkin, seed: String?, live: Boolean) {
 private fun TuneKnob(skin: PlayerSkin, enabled: Boolean, onScan: () -> Unit) {
     Box(Modifier.clickable(enabled = enabled, onClick = onScan)) {
         KnobFace(
-            label = "TUNE",
+            label = "SCAN",
             value = null,
             skin = skin,
             enabled = enabled,
@@ -264,18 +254,43 @@ private fun TuneKnob(skin: PlayerSkin, enabled: Boolean, onScan: () -> Unit) {
     }
 }
 
+/**
+ * Rotary: the pointer follows the finger around the knob, so the control matches
+ * the way it looks. Dragging through the gap at the bottom snaps to the nearest end.
+ */
 @Composable
-private fun VolumeKnob(volume: Float, skin: PlayerSkin, onDelta: (Float) -> Unit) {
-    val knobPx = with(LocalDensity.current) { KNOB_SIZE.toPx() }
+private fun VolumeKnob(volume: Float, skin: PlayerSkin, onSet: (Float) -> Unit) {
     Box(
-        Modifier.pointerInput(knobPx) {
-            detectVerticalDragGestures { _, dragAmount ->
-                // Dragging up raises the volume.
-                onDelta(-dragAmount / (knobPx * 3f))
-            }
+        Modifier.pointerInput(Unit) {
+            detectDragGestures(
+                onDragStart = { position -> onSet(volumeFromPosition(position, size)) },
+                onDrag = { change, _ ->
+                    change.consume()
+                    onSet(volumeFromPosition(change.position, size))
+                },
+            )
         },
     ) {
         KnobFace(label = "VOLUME", value = volume, skin = skin, enabled = true)
+    }
+}
+
+private fun volumeFromPosition(position: Offset, size: IntSize): Float {
+    val degrees = Math.toDegrees(
+        atan2(
+            (position.y - size.height / 2f).toDouble(),
+            (position.x - size.width / 2f).toDouble(),
+        ),
+    )
+    // Screen coordinates put 0 degrees at 3 o'clock and grow clockwise, so the
+    // dial runs 135°..405° and the gap sits at the bottom (45°..135°).
+    val angle = if (degrees < KNOB_START_DEGREES) degrees + 360.0 else degrees
+    val end = KNOB_START_DEGREES + KNOB_SWEEP_DEGREES
+    return when {
+        angle <= KNOB_START_DEGREES -> 0f
+        angle <= end -> ((angle - KNOB_START_DEGREES) / KNOB_SWEEP_DEGREES).toFloat()
+        angle < end + (360.0 - KNOB_SWEEP_DEGREES) / 2.0 -> 1f
+        else -> 0f
     }
 }
 
@@ -445,6 +460,9 @@ private fun stableNeedle(seed: String?): Float {
 
 private val KNOB_SIZE = 64.dp
 private const val KNOB_TICKS = 11
-private const val KNOB_START_DEGREES = -135.0
-private const val KNOB_STEP_DEGREES = 27.0
+
+/** Dial sweeps clockwise from 7:30 to 4:30, leaving the gap at the bottom. */
+private const val KNOB_SWEEP_DEGREES = 270.0
+private const val KNOB_START_DEGREES = 135.0
+private const val KNOB_STEP_DEGREES = KNOB_SWEEP_DEGREES / (KNOB_TICKS - 1)
 private const val TICK_COUNT = 21

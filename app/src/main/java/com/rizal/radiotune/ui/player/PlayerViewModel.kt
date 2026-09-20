@@ -62,9 +62,7 @@ class PlayerViewModel(
         }
     }
 
-    fun nudgeVolume(delta: Float) {
-        controller.setVolume(controller.state.value.volume + delta)
-    }
+    fun setVolume(fraction: Float) = controller.setVolume(fraction)
 
     fun cycleSleepTimer() {
         val current = controller.state.value.sleepTimerMinutes
