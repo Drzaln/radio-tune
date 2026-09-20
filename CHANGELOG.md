@@ -3,6 +3,26 @@
 Notable changes to RadioTune. Versions follow the git tags (`vX.Y.Z`); the
 Android `versionCode` is derived as `major * 10000 + minor * 100 + patch`.
 
+## [1.4.2] - 2026-09-19
+
+### Added
+
+- **Semi-realism** player style: navy ribbed shell with a large chamfered sticker
+  label printed in colour bands, the tape window cut into the label, cross-head
+  screws, a moulded bottom plate and a worn speckle finish.
+
+### Removed
+
+- **Brutalist** player style.
+
+### Changed
+
+- Player styles are now fully data-driven: cassette geometry (label size and
+  chamfer, window, spools, hub) and the detail switches are per-style fields on
+  `CassetteLook`, so adding a style no longer touches the renderer.
+- A preference naming a style that no longer exists falls back to Classic instead
+  of failing.
+
 ## [1.4.1] - 2026-09-19
 
 ### Changed

@@ -18,13 +18,20 @@ import androidx.compose.ui.unit.dp
  * Look of the now-playing screen. A style owns the whole screen (backdrop, text,
  * accent, control shape) plus the cassette drawing, so it reads as one skin.
  * Other screens stay on the Material theme.
+ *
+ * The stored preference keeps the enum *name*, so removing or reordering styles
+ * is safe: an unknown name falls back to [PlayerStyle.CLASSIC].
  */
 enum class PlayerStyle(val displayName: String) {
     CLASSIC("Classic"),
     MINIMAL("Minimal"),
-    BRUTALIST("Brutalist"),
     REALISM("Realism"),
+    SEMI_REALISM("Semi-realism"),
 }
+
+/** One printed stripe of a label. Weights are relative, not absolute. */
+@Immutable
+data class LabelBand(val color: Color, val weight: Float = 1f)
 
 @Immutable
 data class CassetteLook(
@@ -41,7 +48,6 @@ data class CassetteLook(
     val cornerScale: Float = 1f,
     val strokeScale: Float = 1f,
     val useGradient: Boolean = true,
-    val detailed: Boolean = true,
     val hardShadow: Color? = null,
     /** Optional middle stop for a three-stop shell gradient. */
     val shellMid: Color? = null,
@@ -57,6 +63,32 @@ data class CassetteLook(
     val specular: Color? = null,
     /** Ambient-occlusion shadows around recesses and under the label. */
     val occlusion: Color? = null,
+    // Layout, as fractions of the cassette height/width.
+    val labelTop: Float = 0.085f,
+    val labelHeight: Float = 0.40f,
+    /** Chamfers the label's top corners when > 0 (fraction of the width). */
+    val labelChamfer: Float = 0f,
+    val windowTop: Float = 0.79f,
+    val windowWidth: Float = 0.56f,
+    val windowHeight: Float = 0.145f,
+    val spoolY: Float = 0.665f,
+    val spoolRadius: Float = 0.145f,
+    val hubSpokes: Int = 6,
+    // Detail switches.
+    val showNotches: Boolean = true,
+    val showScrews: Boolean = true,
+    val showStripe: Boolean = true,
+    val showRuledLines: Boolean = true,
+    val showLabelOutline: Boolean = true,
+    val showTapeWindow: Boolean = true,
+    val showPinchRollers: Boolean = true,
+    // Extra finishes.
+    /** When set, replaces the solid label + stripe with printed bands. */
+    val labelBands: List<LabelBand> = emptyList(),
+    val ribs: Color? = null,
+    val speckle: Color? = null,
+    val crossScrews: Boolean = false,
+    val bottomPlate: Boolean = false,
 )
 
 @Immutable
@@ -82,8 +114,8 @@ data class PlayerSkin(
 fun PlayerStyle.skin(): PlayerSkin = when (this) {
     PlayerStyle.CLASSIC -> if (isSystemInDarkTheme()) ClassicDark else ClassicLight
     PlayerStyle.MINIMAL -> minimalSkin(MaterialTheme.colorScheme, isSystemInDarkTheme())
-    PlayerStyle.BRUTALIST -> if (isSystemInDarkTheme()) BrutalistDark else BrutalistLight
     PlayerStyle.REALISM -> if (isSystemInDarkTheme()) RealismDark else RealismLight
+    PlayerStyle.SEMI_REALISM -> if (isSystemInDarkTheme()) SemiRealismDark else SemiRealismLight
 }
 
 // Warm veneer and cream label, like a 1980s cassette deck.
@@ -156,7 +188,14 @@ private fun minimalSkin(scheme: ColorScheme, dark: Boolean) = PlayerSkin(
         spoke = scheme.surface,
         line = scheme.onSurfaceVariant.copy(alpha = 0.25f),
         useGradient = false,
-        detailed = false,
+        hubSpokes = 3,
+        showNotches = false,
+        showScrews = false,
+        showStripe = false,
+        showRuledLines = false,
+        showLabelOutline = false,
+        showTapeWindow = false,
+        showPinchRollers = false,
     ),
     backdrop = SolidColor(scheme.background),
     surface = scheme.surfaceContainerHigh,
@@ -226,65 +265,76 @@ private val RealismDark = PlayerSkin(
     darkStatusBarIcons = false,
 )
 
-// Raw blocks, fat outlines and a hard offset shadow.
-private val BrutalistLight = PlayerSkin(
-    cassette = CassetteLook(
-        shellTop = Color(0xFFFFFFFF),
-        shellBottom = Color(0xFFFFFFFF),
-        edge = Color(0xFF000000),
-        label = Color(0xFFFFFFFF),
-        stripe = Color(0xFF000000),
-        recess = Color(0xFFD9D9D9),
-        tape = Color(0xFF000000),
-        hub = Color(0xFF000000),
-        spoke = Color(0xFFFFFFFF),
-        line = Color(0xFF000000),
-        cornerScale = 0.2f,
-        strokeScale = 3f,
-        useGradient = false,
-        hardShadow = Color(0xFF000000),
+// Navy ribbed shell with a big printed sticker label that the window cuts into —
+// illustrated rather than photographic.
+private val SemiRealismCassette = CassetteLook(
+    shellTop = Color(0xFF3C4658),
+    shellMid = Color(0xFF313A4A),
+    shellBottom = Color(0xFF232A38),
+    edge = Color(0xFF161B24),
+    label = Color(0xFFF1E7C6),
+    stripe = Color(0xFFE8541E),
+    recess = Color(0xFF12161E),
+    tape = Color(0xFFDCD7C8),
+    hub = Color(0xFFF7F5EF),
+    spoke = Color(0xFF9AA0AB),
+    line = Color(0xFF2A2F3A),
+    sheen = Color(0x14FFFFFF),
+    bevel = Color(0x1AFFFFFF),
+    glass = Color(0x1FFFFFFF),
+    labelTop = 0.10f,
+    labelHeight = 0.60f,
+    labelChamfer = 0.05f,
+    windowTop = 0.32f,
+    windowWidth = 0.58f,
+    windowHeight = 0.24f,
+    spoolY = 0.44f,
+    spoolRadius = 0.12f,
+    showNotches = false,
+    showRuledLines = false,
+    showStripe = false,
+    showPinchRollers = false,
+    labelBands = listOf(
+        LabelBand(Color(0xFFA9C4A0), 0.10f),
+        LabelBand(Color(0xFFF1E7C6), 0.20f),
+        LabelBand(Color(0xFFE8541E), 0.46f),
+        LabelBand(Color(0xFFF6C61C), 0.14f),
+        LabelBand(Color(0xFFA9C4A0), 0.10f),
     ),
-    backdrop = SolidColor(Color(0xFFFFE24D)),
-    surface = Color(0xFFFFFFFF),
-    content = Color(0xFF000000),
-    mutedContent = Color(0xFF000000).copy(alpha = 0.68f),
-    accent = Color(0xFF000000),
-    onAccent = Color(0xFFFFE24D),
-    outline = Color(0xFF000000),
-    controlShape = RoundedCornerShape(0.dp),
-    panelShape = RoundedCornerShape(0.dp),
-    borderWidth = 3.dp,
-    shadowElevation = 0.dp,
+    ribs = Color(0xFF1B2130),
+    speckle = Color(0x33161B24),
+    crossScrews = true,
+    bottomPlate = true,
+)
+
+private val SemiRealismLight = PlayerSkin(
+    cassette = SemiRealismCassette,
+    backdrop = Brush.verticalGradient(listOf(Color(0xFFF4F1EA), Color(0xFFE3DDD0))),
+    surface = Color(0xFFFFFDF7),
+    content = Color(0xFF232833),
+    mutedContent = Color(0xFF6A7080),
+    accent = Color(0xFFE8541E),
+    onAccent = Color(0xFFFFF8F0),
+    outline = Color(0xFFC9C3B4),
+    controlShape = CircleShape,
+    panelShape = RoundedCornerShape(18.dp),
+    borderWidth = 1.dp,
+    shadowElevation = 16.dp,
     darkStatusBarIcons = true,
 )
 
-private val BrutalistDark = PlayerSkin(
-    cassette = CassetteLook(
-        shellTop = Color(0xFF1A1A1A),
-        shellBottom = Color(0xFF1A1A1A),
-        edge = Color(0xFFFFFFFF),
-        label = Color(0xFF1A1A1A),
-        stripe = Color(0xFFFFE24D),
-        recess = Color(0xFF000000),
-        tape = Color(0xFFFFFFFF),
-        hub = Color(0xFFFFE24D),
-        spoke = Color(0xFF1A1A1A),
-        line = Color(0xFFFFFFFF),
-        cornerScale = 0.2f,
-        strokeScale = 3f,
-        useGradient = false,
-        hardShadow = Color(0xFFFFE24D),
-    ),
-    backdrop = SolidColor(Color(0xFF111111)),
-    surface = Color(0xFF1A1A1A),
-    content = Color(0xFFFFFFFF),
-    mutedContent = Color(0xFFFFFFFF).copy(alpha = 0.65f),
-    accent = Color(0xFFFFE24D),
-    onAccent = Color(0xFF000000),
-    outline = Color(0xFFFFFFFF),
-    controlShape = RoundedCornerShape(0.dp),
-    panelShape = RoundedCornerShape(0.dp),
-    borderWidth = 3.dp,
-    shadowElevation = 0.dp,
+private val SemiRealismDark = PlayerSkin(
+    cassette = SemiRealismCassette,
+    backdrop = Brush.verticalGradient(listOf(Color(0xFF1A1E26), Color(0xFF11141A))),
+    surface = Color(0xFF232833),
+    content = Color(0xFFF1EDE3),
+    mutedContent = Color(0xFFA8AEBB),
+    accent = Color(0xFFFF6B35),
+    onAccent = Color(0xFF1A1008),
+    outline = Color(0xFF3A4150),
+    controlShape = CircleShape,
+    panelShape = RoundedCornerShape(18.dp),
+    borderWidth = 1.dp,
+    shadowElevation = 16.dp,
     darkStatusBarIcons = false,
 )

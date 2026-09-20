@@ -86,11 +86,12 @@ Key files and tuning points:
   spin on play (freeze in place on pause); artwork fills the label area. Favicons
   load through Coil in `StationAvatar` (`AsyncImage` over the vector fallback).
 - Player styles: `ui/theme/PlayerStyle.kt` — `PlayerStyle` (CLASSIC, MINIMAL,
-  BRUTALIST, REALISM) → `PlayerSkin` (backdrop, surfaces, content/muted/accent
+  REALISM, SEMI_REALISM) → `PlayerSkin` (backdrop, surfaces, content/muted/accent
   colours, control + panel shapes, border width, shadow, status-bar contrast) and
-  `CassetteLook` (everything the cassette draws, including the optional
-  `shellMid`/`sheen`/`bevel`/`glass`/`specular`/`occlusion` shading and the
-  `steppedShell` moulded-rim renderer). `CassettePlayer` takes a
+  `CassetteLook` (everything the cassette draws: geometry fractions, detail
+  switches, and the optional `shellMid`/`sheen`/`bevel`/`glass`/`specular`/
+  `occlusion` shading plus the `steppedShell` moulded-rim renderer).
+  `CassettePlayer` takes a
   `CassetteLook`; it must not read `MaterialTheme` directly. A style owns the whole
   now-playing screen — backdrop, top bar, play/favourite/sleep/stop and the sleep
   dialog — but nothing else: lists, mini player and nav stay on the Material theme.

@@ -23,31 +23,33 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.rizal.radiotune.ui.theme.CassetteLook
+import com.rizal.radiotune.ui.theme.LabelBand
 import kotlin.math.cos
 import kotlin.math.sin
+import kotlin.random.Random
 
 /**
  * Compact Cassette drawn with Canvas — no assets. The reels spin while [playing],
  * slow down while buffering and freeze in place when paused.
  *
  * Everything visual comes from [look], so a [com.rizal.radiotune.ui.theme.PlayerStyle]
- * can reshape the cassette without touching this composable.
+ * can reshape the cassette — geometry, palette and finishes — without touching
+ * this composable.
  *
- * The moulded shell is a separate, static Canvas so that the detailed shading of
- * the realism style is not redrawn on every animation frame; only the reels layer
- * reads the animated angle.
+ * The shell is a static Canvas and only the reels layer reads the animated angle,
+ * so heavy shading is not re-rendered on every frame.
  */
 @Composable
 fun CassettePlayer(
@@ -95,22 +97,25 @@ fun CassettePlayer(
             drawReels(angle.value, look, shellWidth.toPx(), shellHeight.toPx())
         }
 
-        if (!artworkUrl.isNullOrBlank()) {
-            val artTop = if (look.detailed) 0.135f else 0.085f
-            val artHeight = if (look.detailed) 0.35f else 0.40f
+        // Printed labels carry their own design, so artwork only goes on plain ones.
+        if (!artworkUrl.isNullOrBlank() && look.labelBands.isEmpty()) {
+            val stripeOffset = if (look.showStripe) STRIPE_HEIGHT else 0f
             AsyncImage(
                 model = artworkUrl,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
-                    .offset(x = shellWidth * 0.07f, y = shellHeight * artTop)
-                    .size(width = shellWidth * 0.86f, height = shellHeight * artHeight)
+                    .offset(x = shellWidth * LABEL_LEFT, y = shellHeight * (look.labelTop + stripeOffset))
+                    .size(
+                        width = shellWidth * LABEL_WIDTH,
+                        height = shellHeight * (look.labelHeight - stripeOffset),
+                    )
                     .clip(
                         RoundedCornerShape(
-                            topStart = if (look.detailed) 0.dp else shellHeight * 0.03f * look.cornerScale,
-                            topEnd = if (look.detailed) 0.dp else shellHeight * 0.03f * look.cornerScale,
-                            bottomEnd = shellHeight * 0.03f * look.cornerScale,
-                            bottomStart = shellHeight * 0.03f * look.cornerScale,
+                            topStart = if (look.showStripe) 0.dp else shellHeight * LABEL_CORNER * look.cornerScale,
+                            topEnd = if (look.showStripe) 0.dp else shellHeight * LABEL_CORNER * look.cornerScale,
+                            bottomEnd = shellHeight * LABEL_CORNER * look.cornerScale,
+                            bottomStart = shellHeight * LABEL_CORNER * look.cornerScale,
                         ),
                     ),
             )
@@ -121,6 +126,9 @@ fun CassettePlayer(
 private fun DrawScope.drawShell(look: CassetteLook, w: Float, h: Float) {
     val corner = h * 0.075f * look.cornerScale
     val stroke = h * 0.010f * look.strokeScale
+    val shellPath = Path().apply {
+        addRoundRect(RoundRect(Rect(0f, 0f, w, h), CornerRadius(corner, corner)))
+    }
 
     look.hardShadow?.let { shadowColor ->
         drawRoundRect(
@@ -168,12 +176,11 @@ private fun DrawScope.drawShell(look: CassetteLook, w: Float, h: Float) {
         }
     }
 
+    look.ribs?.let { ribs -> clipPath(shellPath) { drawRibs(ribs, w, h, stroke) } }
+
     // Specular streak across the plastic.
     look.sheen?.let { sheen ->
-        val shellClip = Path().apply {
-            addRoundRect(RoundRect(Rect(0f, 0f, w, h), CornerRadius(corner, corner)))
-        }
-        clipPath(shellClip) {
+        clipPath(shellPath) {
             rotate(-18f, Offset(w / 2f, h / 2f)) {
                 drawRect(
                     brush = Brush.horizontalGradient(
@@ -190,10 +197,7 @@ private fun DrawScope.drawShell(look: CassetteLook, w: Float, h: Float) {
 
     // Broad highlight where the light falls across the moulding.
     look.specular?.let { spec ->
-        val specularClip = Path().apply {
-            addRoundRect(RoundRect(Rect(0f, 0f, w, h), CornerRadius(corner, corner)))
-        }
-        clipPath(specularClip) {
+        clipPath(shellPath) {
             drawCircle(
                 brush = Brush.radialGradient(
                     colors = listOf(spec, Color.Transparent),
@@ -206,8 +210,7 @@ private fun DrawScope.drawShell(look: CassetteLook, w: Float, h: Float) {
         }
     }
 
-    if (look.detailed) {
-        // Write-protect notches.
+    if (look.showNotches) {
         listOf(0.10f, 0.845f).forEach { x ->
             drawRoundRect(
                 color = look.recess,
@@ -216,87 +219,65 @@ private fun DrawScope.drawShell(look: CassetteLook, w: Float, h: Float) {
                 cornerRadius = CornerRadius(h * 0.012f, h * 0.012f),
             )
         }
+    }
 
-        // Corner screws.
+    if (look.showScrews) {
         val screwRadius = h * 0.021f
         listOf(
             Offset(w * 0.06f, h * 0.075f),
             Offset(w * 0.94f, h * 0.075f),
             Offset(w * 0.06f, h * 0.925f),
             Offset(w * 0.94f, h * 0.925f),
-        ).forEach { center ->
-            drawCircle(
-                color = look.occlusion
-                    ?.let { lerp(look.shellBottom, Color.White, 0.20f) }
-                    ?: look.shellBottom,
-                radius = screwRadius,
-                center = center,
-            )
-            drawCircle(look.edge, screwRadius, center, style = Stroke(width = stroke))
-            drawLine(
-                color = look.line,
-                start = Offset(center.x - screwRadius * 0.55f, center.y),
-                end = Offset(center.x + screwRadius * 0.55f, center.y),
-                strokeWidth = screwRadius * 0.28f,
-                cap = StrokeCap.Round,
-            )
-        }
+        ).forEach { center -> drawScrew(center, screwRadius, look, stroke) }
     }
 
     // Label sticker. Artwork is composited over this rect.
-    val labelLeft = w * 0.07f
-    val labelTop = h * 0.085f
-    val labelWidth = w * 0.86f
-    val labelHeight = h * 0.40f
-    val labelCorner = h * 0.03f * look.cornerScale
-
-    // Contact shadow around the sticker, so it sits on the shell.
-    look.occlusion?.let { ao ->
-        drawRoundRect(
-            color = ao,
-            topLeft = Offset(labelLeft, labelTop),
-            size = Size(labelWidth, labelHeight),
-            cornerRadius = CornerRadius(labelCorner, labelCorner),
-            style = Stroke(width = stroke * 2.6f),
-        )
-    }
-
-    drawRoundRect(
-        color = look.label,
-        topLeft = Offset(labelLeft, labelTop),
-        size = Size(labelWidth, labelHeight),
-        cornerRadius = CornerRadius(labelCorner, labelCorner),
+    val labelLeft = w * LABEL_LEFT
+    val labelWidth = w * LABEL_WIDTH
+    val labelTop = h * look.labelTop
+    val labelHeight = h * look.labelHeight
+    val labelCorner = h * LABEL_CORNER * look.cornerScale
+    val labelPath = buildLabelPath(
+        left = labelLeft,
+        top = labelTop,
+        width = labelWidth,
+        height = labelHeight,
+        corner = labelCorner,
+        chamfer = w * look.labelChamfer,
     )
 
-    if (look.detailed) {
-        drawRoundRect(
-            color = look.edge,
-            topLeft = Offset(labelLeft, labelTop),
-            size = Size(labelWidth, labelHeight),
-            cornerRadius = CornerRadius(labelCorner, labelCorner),
-            style = Stroke(width = stroke),
-        )
-        val labelClip = Path().apply {
-            addRoundRect(
-                RoundRect(
-                    rect = Rect(labelLeft, labelTop, labelLeft + labelWidth, labelTop + labelHeight),
-                    cornerRadius = CornerRadius(labelCorner, labelCorner),
-                ),
-            )
+    // Contact shadow so the sticker sits on the shell.
+    look.occlusion?.let { ao ->
+        drawPath(path = labelPath, color = ao, style = Stroke(width = stroke * 2.6f))
+    }
+
+    if (look.labelBands.isEmpty()) {
+        drawPath(path = labelPath, color = look.label)
+    } else {
+        clipPath(labelPath) {
+            drawBands(look.labelBands, labelLeft, labelTop, labelWidth, labelHeight)
         }
-        clipPath(labelClip) {
+    }
+
+    if (look.showLabelOutline) {
+        drawPath(path = labelPath, color = look.edge, style = Stroke(width = stroke))
+    }
+
+    if (look.showStripe) {
+        clipPath(labelPath) {
             drawRect(
                 brush = Brush.horizontalGradient(
                     colors = listOf(look.stripe, look.stripe.copy(alpha = 0.72f)),
                 ),
                 topLeft = Offset(labelLeft, labelTop),
-                size = Size(labelWidth, h * 0.05f),
+                size = Size(labelWidth, h * STRIPE_HEIGHT),
             )
         }
+    }
 
-        // Ruled writing lines, visible when there is no artwork.
+    if (look.showRuledLines) {
         repeat(2) { index ->
-            val y = h * (0.27f + index * 0.075f)
+            val y = labelTop + labelHeight * (0.46f + index * 0.20f)
             drawLine(
                 color = look.line,
                 start = Offset(w * 0.12f, y),
@@ -306,26 +287,30 @@ private fun DrawScope.drawShell(look: CassetteLook, w: Float, h: Float) {
         }
     }
 
-    val spoolY = h * 0.665f
+    look.speckle?.let { speckle ->
+        clipPath(labelPath) {
+            drawSpeckle(speckle, labelLeft, labelTop, labelWidth, labelHeight, h)
+        }
+    }
 
-    val windowLeft = w * 0.22f
-    val windowTop = h * 0.79f
-    val windowWidth = w * 0.56f
-    val windowHeight = h * 0.145f
+    val windowLeft = (w - w * look.windowWidth) / 2f
+    val windowTop = h * look.windowTop
+    val windowW = w * look.windowWidth
+    val windowH = h * look.windowHeight
     val windowCorner = h * 0.03f
 
-    if (look.detailed) {
+    if (look.showTapeWindow) {
         // Tape window opening.
         drawRoundRect(
             color = look.recess,
             topLeft = Offset(windowLeft, windowTop),
-            size = Size(windowWidth, windowHeight),
+            size = Size(windowW, windowH),
             cornerRadius = CornerRadius(windowCorner, windowCorner),
         )
         drawRoundRect(
             color = look.edge,
             topLeft = Offset(windowLeft, windowTop),
-            size = Size(windowWidth, windowHeight),
+            size = Size(windowW, windowH),
             cornerRadius = CornerRadius(windowCorner, windowCorner),
             style = Stroke(width = stroke),
         )
@@ -335,7 +320,7 @@ private fun DrawScope.drawShell(look: CassetteLook, w: Float, h: Float) {
             drawRoundRect(
                 color = ao,
                 topLeft = Offset(windowLeft, windowTop),
-                size = Size(windowWidth, windowHeight),
+                size = Size(windowW, windowH),
                 cornerRadius = CornerRadius(windowCorner, windowCorner),
                 style = Stroke(width = stroke * 2.4f),
             )
@@ -344,11 +329,13 @@ private fun DrawScope.drawShell(look: CassetteLook, w: Float, h: Float) {
 
     // Tape running under both reels. Drawn after the window opening so it shows
     // through it instead of being painted over by the recess.
+    val spoolY = h * look.spoolY
+    val tapeY = if (look.showTapeWindow) windowTop + windowH * 0.5f else h * 0.865f
     val tapePath = Path().apply {
-        moveTo(w * 0.30f, spoolY)
-        lineTo(w * 0.30f, h * 0.865f)
-        lineTo(w * 0.70f, h * 0.865f)
-        lineTo(w * 0.70f, spoolY)
+        moveTo(w * SPOOL_LEFT, spoolY)
+        lineTo(w * SPOOL_LEFT, tapeY)
+        lineTo(w * SPOOL_RIGHT, tapeY)
+        lineTo(w * SPOOL_RIGHT, spoolY)
     }
     drawPath(
         path = tapePath,
@@ -356,41 +343,41 @@ private fun DrawScope.drawShell(look: CassetteLook, w: Float, h: Float) {
         style = Stroke(width = h * 0.028f, cap = StrokeCap.Round, join = StrokeJoin.Round),
     )
 
-    if (look.detailed) {
+    if (look.showTapeWindow) {
         // Reflection across the glass.
         look.glass?.let { glass ->
             val windowClip = Path().apply {
                 addRoundRect(
                     RoundRect(
-                        rect = Rect(
-                            windowLeft,
-                            windowTop,
-                            windowLeft + windowWidth,
-                            windowTop + windowHeight,
-                        ),
+                        rect = Rect(windowLeft, windowTop, windowLeft + windowW, windowTop + windowH),
                         cornerRadius = CornerRadius(windowCorner, windowCorner),
                     ),
                 )
             }
             clipPath(windowClip) {
-                rotate(-22f, Offset(w / 2f, windowTop + windowHeight / 2f)) {
+                rotate(-22f, Offset(w / 2f, windowTop + windowH / 2f)) {
                     drawRect(
                         brush = Brush.horizontalGradient(
                             colors = listOf(Color.Transparent, glass, Color.Transparent),
                             startX = windowLeft,
-                            endX = windowLeft + windowWidth,
+                            endX = windowLeft + windowW,
                         ),
                         topLeft = Offset(windowLeft - w * 0.2f, windowTop - h * 0.1f),
-                        size = Size(windowWidth + w * 0.4f, windowHeight + h * 0.2f),
+                        size = Size(windowW + w * 0.4f, windowH + h * 0.2f),
                     )
                 }
             }
         }
+    }
 
-        // Pinch roller cut-outs either side of the head opening.
+    if (look.showPinchRollers) {
         listOf(0.36f, 0.64f).forEach { x ->
             drawCircle(look.recess, h * 0.024f, Offset(w * x, h * 0.905f))
         }
+    }
+
+    if (look.bottomPlate) {
+        drawBottomPlate(look, w, h, stroke)
     }
 }
 
@@ -461,28 +448,167 @@ private fun DrawScope.drawSteppedShell(
     )
 }
 
+private fun buildLabelPath(
+    left: Float,
+    top: Float,
+    width: Float,
+    height: Float,
+    corner: Float,
+    chamfer: Float,
+): Path = Path().apply {
+    if (chamfer > 0f) {
+        moveTo(left + chamfer, top)
+        lineTo(left + width - chamfer, top)
+        lineTo(left + width, top + chamfer)
+        lineTo(left + width, top + height)
+        lineTo(left, top + height)
+        lineTo(left, top + chamfer)
+        close()
+    } else {
+        addRoundRect(
+            RoundRect(
+                rect = Rect(left, top, left + width, top + height),
+                cornerRadius = CornerRadius(corner, corner),
+            ),
+        )
+    }
+}
+
+private fun DrawScope.drawBands(
+    bands: List<LabelBand>,
+    left: Float,
+    top: Float,
+    width: Float,
+    height: Float,
+) {
+    val total = bands.sumOf { it.weight.toDouble() }.toFloat()
+    if (total <= 0f) return
+
+    var y = top
+    bands.forEach { band ->
+        val bandHeight = height * (band.weight / total)
+        drawRect(
+            color = band.color,
+            topLeft = Offset(left, y),
+            size = Size(width, bandHeight + 1f),
+        )
+        y += bandHeight
+    }
+}
+
+private fun DrawScope.drawRibs(color: Color, w: Float, h: Float, stroke: Float) {
+    val margin = w * 0.06f
+    val spacing = h * 0.022f
+    var x = spacing
+    while (x < margin) {
+        drawLine(color, Offset(x, h * 0.10f), Offset(x, h * 0.90f), strokeWidth = stroke * 0.9f)
+        drawLine(color, Offset(w - x, h * 0.10f), Offset(w - x, h * 0.90f), strokeWidth = stroke * 0.9f)
+        x += spacing
+    }
+    var bx = margin
+    while (bx < w - margin) {
+        drawLine(color, Offset(bx, h * 0.965f), Offset(bx, h * 0.995f), strokeWidth = stroke * 0.9f)
+        bx += spacing * 0.8f
+    }
+}
+
+private fun DrawScope.drawSpeckle(
+    color: Color,
+    left: Float,
+    top: Float,
+    width: Float,
+    height: Float,
+    h: Float,
+) {
+    val random = Random(0x5EED)
+    repeat(170) {
+        drawCircle(
+            color = color,
+            radius = h * (0.0015f + random.nextFloat() * 0.0035f),
+            center = Offset(
+                left + random.nextFloat() * width,
+                top + random.nextFloat() * height,
+            ),
+        )
+    }
+}
+
+private fun DrawScope.drawScrew(center: Offset, radius: Float, look: CassetteLook, stroke: Float) {
+    drawCircle(
+        color = look.occlusion
+            ?.let { lerp(look.shellBottom, Color.White, 0.20f) }
+            ?: look.shellBottom,
+        radius = radius,
+        center = center,
+    )
+    drawCircle(look.edge, radius, center, style = Stroke(width = stroke))
+
+    val slot = radius * 0.55f
+    val slotWidth = radius * 0.28f
+    drawLine(
+        color = look.line,
+        start = Offset(center.x - slot, center.y),
+        end = Offset(center.x + slot, center.y),
+        strokeWidth = slotWidth,
+        cap = StrokeCap.Round,
+    )
+    if (look.crossScrews) {
+        drawLine(
+            color = look.line,
+            start = Offset(center.x, center.y - slot),
+            end = Offset(center.x, center.y + slot),
+            strokeWidth = slotWidth,
+            cap = StrokeCap.Round,
+        )
+    }
+}
+
+private fun DrawScope.drawBottomPlate(look: CassetteLook, w: Float, h: Float, stroke: Float) {
+    val top = h * 0.80f
+    val bottom = h * 0.95f
+    val inset = w * 0.19f
+    val shoulder = w * 0.055f
+    val path = Path().apply {
+        moveTo(inset + shoulder, top)
+        lineTo(w - inset - shoulder, top)
+        lineTo(w - inset, bottom)
+        lineTo(inset, bottom)
+        close()
+    }
+    drawPath(path, look.shellMid ?: look.shellTop)
+    drawPath(path, look.edge, style = Stroke(width = stroke))
+
+    listOf(0.31f, 0.69f).forEach { fx ->
+        drawCircle(look.tape, h * 0.024f, Offset(w * fx, h * 0.875f))
+        drawCircle(
+            color = look.edge,
+            radius = h * 0.024f,
+            center = Offset(w * fx, h * 0.875f),
+            style = Stroke(width = stroke * 0.8f),
+        )
+    }
+    drawCircle(look.edge, h * 0.016f, Offset(w * 0.5f, h * 0.875f))
+}
+
 private fun DrawScope.drawReels(angleDegrees: Float, look: CassetteLook, w: Float, h: Float) {
     val stroke = h * 0.010f * look.strokeScale
-    val spoolY = h * 0.665f
-    val spoolRadius = h * 0.145f
-    val spokes = if (look.detailed) 6 else 3
+    val spoolY = h * look.spoolY
+    val spoolRadius = h * look.spoolRadius
 
     drawReel(
-        center = Offset(w * 0.30f, spoolY),
+        center = Offset(w * SPOOL_LEFT, spoolY),
         radius = spoolRadius,
         angleDegrees = angleDegrees,
         look = look,
         stroke = stroke,
-        spokes = spokes,
         tapePackScale = 0.70f,
     )
     drawReel(
-        center = Offset(w * 0.70f, spoolY),
+        center = Offset(w * SPOOL_RIGHT, spoolY),
         radius = spoolRadius,
         angleDegrees = angleDegrees * TAKE_UP_RATIO,
         look = look,
         stroke = stroke,
-        spokes = spokes,
         tapePackScale = 0.58f,
     )
 }
@@ -493,7 +619,6 @@ private fun DrawScope.drawReel(
     angleDegrees: Float,
     look: CassetteLook,
     stroke: Float,
-    spokes: Int,
     tapePackScale: Float,
 ) {
     drawCircle(look.recess, radius, center)
@@ -531,8 +656,8 @@ private fun DrawScope.drawReel(
     }
 
     rotate(angleDegrees, center) {
-        repeat(spokes) { index ->
-            val radians = Math.toRadians(index * (360.0 / spokes))
+        repeat(look.hubSpokes) { index ->
+            val radians = Math.toRadians(index * (360.0 / look.hubSpokes))
             val inner = radius * 0.09f
             val outer = radius * 0.26f
             drawLine(
@@ -556,3 +681,9 @@ private const val CASSETTE_ASPECT = 0.63f
 private const val PLAYING_PERIOD_MS = 1600
 private const val BUFFERING_PERIOD_MS = 5200
 private const val TAKE_UP_RATIO = 1.55f
+private const val LABEL_LEFT = 0.07f
+private const val LABEL_WIDTH = 0.86f
+private const val LABEL_CORNER = 0.03f
+private const val STRIPE_HEIGHT = 0.05f
+private const val SPOOL_LEFT = 0.30f
+private const val SPOOL_RIGHT = 0.70f
