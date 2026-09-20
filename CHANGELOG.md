@@ -3,6 +3,19 @@
 Notable changes to RadioTune. Versions follow the git tags (`vX.Y.Z`); the
 Android `versionCode` is derived as `major * 10000 + minor * 100 + patch`.
 
+## [1.5.0] - 2026-09-19
+
+### Changed
+
+- All player styles now share the semi-realism cassette silhouette: a large
+  chamfered sticker label with the tape window cut into it, ribbed edges and a
+  moulded bottom plate. Classic, Minimal and Realism differ only by palette and
+  finishes — warm cream, flat theme colours and dark moulded plastic.
+- The station logo is now a rounded badge centred at the top of the label rather
+  than filling it, and it also shows on the printed-band style. The tape window
+  and spools moved down slightly to make room; on semi-realism the logo lands in
+  the cream band and the window in the orange one.
+
 ## [1.4.2] - 2026-09-19
 
 ### Added
