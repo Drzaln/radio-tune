@@ -12,6 +12,7 @@ Media3/ExoPlayer, no Hilt/Room/KSP.
   [Radio Browser](https://www.radio-browser.info/) API
 - Background playback with a media notification and audio focus handling
 - A landscape retro-radio layout with working tuning and volume knobs
+- Side-rail navigation and adaptive list columns in landscape
 - Station artwork, and an animated cassette on the now-playing screen
 - Four player styles (Classic, Minimal, Realism, Semi-realism) with live previews
 - Sleep timer with a gentle fade-out

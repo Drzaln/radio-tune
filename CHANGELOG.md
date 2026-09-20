@@ -3,6 +3,22 @@
 Notable changes to RadioTune. Versions follow the git tags (`vX.Y.Z`); the
 Android `versionCode` is derived as `major * 10000 + minor * 100 + patch`.
 
+## [1.7.0] - 2026-09-19
+
+### Added
+
+- Landscape browsing: navigation moves to a side rail and the mini player docks at
+  the bottom of the content, so the lists keep the full height. Countries,
+  stations and favourites now lay out in adaptive columns — one in portrait, two
+  or three in landscape.
+
+### Changed
+
+- Landscape now-playing polish: the redundant station name left the top bar (back
+  on the left, style on the right), the cassette is smaller and centred, and the
+  volume knob now turns — the pointer follows your finger around the dial, whose
+  gap moved to the bottom where a real knob has it. The tuning knob reads SCAN.
+
 ## [1.6.0] - 2026-09-19
 
 ### Added
