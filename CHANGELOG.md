@@ -3,6 +3,14 @@
 Notable changes to RadioTune. Versions follow the git tags (`vX.Y.Z`); the
 Android `versionCode` is derived as `major * 10000 + minor * 100 + patch`.
 
+## [1.5.1] - 2026-09-19
+
+### Changed
+
+- The station logo on the cassette is now a small circular badge in the label's
+  top-left corner instead of a large badge across the top, and the tape window
+  and spools moved back to their previous position.
+
 ## [1.5.0] - 2026-09-19
 
 ### Changed
