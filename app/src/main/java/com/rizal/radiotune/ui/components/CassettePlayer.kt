@@ -12,6 +12,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
@@ -97,27 +98,18 @@ fun CassettePlayer(
             drawReels(angle.value, look, shellWidth.toPx(), shellHeight.toPx())
         }
 
-        // Printed labels carry their own design, so artwork only goes on plain ones.
-        if (!artworkUrl.isNullOrBlank() && look.labelBands.isEmpty()) {
-            val stripeOffset = if (look.showStripe) STRIPE_HEIGHT else 0f
+        // Station logo: a medium rounded badge, centred at the top of the label.
+        if (!artworkUrl.isNullOrBlank()) {
+            val logoSize = shellHeight * LOGO_SIZE
             AsyncImage(
                 model = artworkUrl,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
-                    .offset(x = shellWidth * LABEL_LEFT, y = shellHeight * (look.labelTop + stripeOffset))
-                    .size(
-                        width = shellWidth * LABEL_WIDTH,
-                        height = shellHeight * (look.labelHeight - stripeOffset),
-                    )
-                    .clip(
-                        RoundedCornerShape(
-                            topStart = if (look.showStripe) 0.dp else shellHeight * LABEL_CORNER * look.cornerScale,
-                            topEnd = if (look.showStripe) 0.dp else shellHeight * LABEL_CORNER * look.cornerScale,
-                            bottomEnd = shellHeight * LABEL_CORNER * look.cornerScale,
-                            bottomStart = shellHeight * LABEL_CORNER * look.cornerScale,
-                        ),
-                    ),
+                    .align(Alignment.TopCenter)
+                    .offset(y = shellHeight * (look.labelTop + look.labelHeight * LOGO_TOP))
+                    .size(logoSize)
+                    .clip(RoundedCornerShape(logoSize * LOGO_CORNER)),
             )
         }
     }
@@ -671,3 +663,6 @@ private const val LABEL_CORNER = 0.03f
 private const val STRIPE_HEIGHT = 0.05f
 private const val SPOOL_LEFT = 0.30f
 private const val SPOOL_RIGHT = 0.70f
+private const val LOGO_SIZE = 0.24f
+private const val LOGO_TOP = 0.10f
+private const val LOGO_CORNER = 0.26f
