@@ -8,6 +8,9 @@ import androidx.media3.common.C
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import androidx.media3.exoplayer.upstream.DefaultLoadErrorHandlingPolicy
+import androidx.media3.exoplayer.upstream.LoadErrorHandlingPolicy
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import androidx.media3.session.SessionCommand
@@ -22,6 +25,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.io.IOException
 
 @UnstableApi
 class RadioPlayerService : MediaSessionService() {
@@ -45,6 +49,10 @@ class RadioPlayerService : MediaSessionService() {
             )
             .setHandleAudioBecomingNoisy(true)
             .setWakeMode(C.WAKE_MODE_NETWORK)
+            .setMediaSourceFactory(
+                DefaultMediaSourceFactory(this)
+                    .setLoadErrorHandlingPolicy(RadioLoadErrorHandlingPolicy()),
+            )
             .setLoadControl(
                 DefaultLoadControl.Builder()
                     // Live radio: start on a small buffer, grow while playing.
@@ -160,5 +168,30 @@ class RadioPlayerService : MediaSessionService() {
         const val MAX_BUFFER_MS = 30_000
         const val BUFFER_FOR_PLAYBACK_MS = 1_000
         const val BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS = 2_000
+    }
+}
+
+/**
+ * Retries transient network/IO failures with exponential backoff instead of
+ * giving up on the first hiccup, so a live stream that drops briefly resumes
+ * on its own. [PlayerController] only reports an error once these run out.
+ */
+@UnstableApi
+private class RadioLoadErrorHandlingPolicy :
+    DefaultLoadErrorHandlingPolicy(RETRY_COUNT) {
+
+    override fun getRetryDelayMsFor(
+        loadErrorInfo: LoadErrorHandlingPolicy.LoadErrorInfo,
+    ): Long {
+        if (loadErrorInfo.exception !is IOException) return C.TIME_UNSET
+        val backoff = INITIAL_DELAY_MS shl loadErrorInfo.errorCount.coerceAtMost(MAX_BACKOFF_SHIFT)
+        return backoff.coerceAtMost(MAX_DELAY_MS)
+    }
+
+    private companion object {
+        const val RETRY_COUNT = 6
+        const val INITIAL_DELAY_MS = 1_000L
+        const val MAX_DELAY_MS = 30_000L
+        const val MAX_BACKOFF_SHIFT = 4
     }
 }
