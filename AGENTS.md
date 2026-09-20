@@ -42,8 +42,11 @@ KEYSTORE_PASSWORD=... KEY_ALIAS=... KEY_PASSWORD=... \
 
 Output: `app/build/outputs/apk/release/app-release.apk`.
 
-There is no unit-test suite. Verify changes by building and, when relevant,
-by installing on an emulator/device and exercising the flow.
+There is no unit-test suite. Verify changes by building only.
+
+**Never test with an emulator or device.** Do not boot an AVD, install an APK,
+or drive the UI with `adb`. Compile checks (`assembleDebug` / `compileDebugKotlin`)
+plus CI are the verification path.
 
 ## Architecture map
 

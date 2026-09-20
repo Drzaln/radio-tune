@@ -3,6 +3,18 @@
 Notable changes to RadioTune. Versions follow the git tags (`vX.Y.Z`); the
 Android `versionCode` is derived as `major * 10000 + minor * 100 + patch`.
 
+## [1.1.2] - 2026-09-19
+
+### Fixed
+
+- HLS (`.m3u8`) stations — BBC Radio 4, France Inter, RTL and friends — now play.
+  `media3-exoplayer` does not bundle HLS, so `media3-exoplayer-hls` is now a
+  dependency.
+- The Radio Browser `UNKNOWN` codec placeholder is no longer rendered as a
+  quality label on HLS stations.
+- `.pls`/`.m3u` playlist entries are resolved to their first stream URL before
+  playback.
+
 ## [1.1.1] - 2026-09-19
 
 ### Changed
