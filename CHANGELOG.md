@@ -3,6 +3,20 @@
 Notable changes to RadioTune. Versions follow the git tags (`vX.Y.Z`); the
 Android `versionCode` is derived as `major * 10000 + minor * 100 + patch`.
 
+## [1.4.0] - 2026-09-19
+
+### Added
+
+- **Realism** player style: moulded grey plastic with a three-stop gradient, a
+  moulded inner lip, a specular streak across the shell, a reflection on the tape
+  window and a highlight along the wound tape edge — on a neutral studio backdrop
+  with graphite controls.
+
+### Changed
+
+- `CassettePlayer` now draws in two layers (static shell + animated reels) so the
+  detailed shading of the heavier styles is not re-rendered on every frame.
+
 ## [1.3.0] - 2026-09-19
 
 ### Added
