@@ -6,6 +6,10 @@ import android.net.Uri
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
@@ -129,6 +133,35 @@ fun AppRoot(modifier: Modifier = Modifier) {
             navController = navController,
             startDestination = Routes.COUNTRIES,
             modifier = Modifier.padding(innerPadding),
+            enterTransition = {
+                when (targetState.destination.route) {
+                    Routes.PLAYER ->
+                        slideIntoContainer(SlideDirection.Up, tween(NAV_DURATION_MS)) +
+                            fadeIn(tween(NAV_FADE_MS))
+
+                    Routes.COUNTRIES, Routes.FAVORITES ->
+                        fadeIn(tween(NAV_FADE_MS))
+
+                    else ->
+                        slideIntoContainer(SlideDirection.Left, tween(NAV_DURATION_MS)) +
+                            fadeIn(tween(NAV_FADE_MS))
+                }
+            },
+            exitTransition = {
+                fadeOut(tween(NAV_FADE_MS))
+            },
+            popEnterTransition = {
+                fadeIn(tween(NAV_FADE_MS))
+            },
+            popExitTransition = {
+                if (initialState.destination.route == Routes.PLAYER) {
+                    slideOutOfContainer(SlideDirection.Down, tween(NAV_DURATION_MS)) +
+                        fadeOut(tween(NAV_FADE_MS))
+                } else {
+                    slideOutOfContainer(SlideDirection.Right, tween(NAV_DURATION_MS)) +
+                        fadeOut(tween(NAV_FADE_MS))
+                }
+            },
         ) {
             composable(Routes.COUNTRIES) {
                 CountriesScreen(
@@ -188,6 +221,9 @@ fun AppRoot(modifier: Modifier = Modifier) {
         onDismiss = updateViewModel::dismiss,
     )
 }
+
+private const val NAV_DURATION_MS = 320
+private const val NAV_FADE_MS = 200
 
 private fun NavHostController.switchTab(route: String) {
     navigate(route) {
