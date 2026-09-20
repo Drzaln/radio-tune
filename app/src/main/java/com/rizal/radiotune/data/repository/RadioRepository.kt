@@ -116,6 +116,20 @@ class RadioRepository(
         return candidate?.takeIf { it.startsWith("http", ignoreCase = true) }
     }
 
+    /**
+     * A fresh random station in [countryCode]. Deliberately bypasses the list
+     * cache, otherwise "tuning" would keep returning the same station.
+     */
+    suspend fun randomStation(countryCode: String): Station? = withContext(Dispatchers.IO) {
+        api.searchStations(
+            countryCode = countryCode.ifBlank { null },
+            order = "random",
+            limit = 1,
+        ).firstOrNull()
+            ?.toStation()
+            ?.takeIf { it.playbackUrl.isNotBlank() }
+    }
+
     /** Fire-and-forget click registration; feeds Radio Browser's popularity ranking. */
     fun registerClick(stationUuid: String) {
         if (stationUuid.isBlank()) return

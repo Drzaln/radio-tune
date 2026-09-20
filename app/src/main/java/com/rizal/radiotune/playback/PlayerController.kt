@@ -22,8 +22,11 @@ import kotlinx.serialization.json.Json
 data class PlayerUiState(
     val connected: Boolean = false,
     val current: Station? = null,
+    /** Kept after [PlayerController.stop] so a power switch can resume it. */
+    val lastStation: Station? = null,
     val isPlaying: Boolean = false,
     val isBuffering: Boolean = false,
+    val volume: Float = 1f,
     val errorMessage: String? = null,
     val sleepTimerMinutes: Int? = null,
 )
@@ -58,6 +61,10 @@ class PlayerController(
                     errorMessage = if (playbackState == Player.STATE_READY) null else it.errorMessage,
                 )
             }
+        }
+
+        override fun onVolumeChanged(volume: Float) {
+            _state.update { it.copy(volume = volume) }
         }
 
         override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
@@ -101,7 +108,14 @@ class PlayerController(
             _state.update { it.copy(errorMessage = "This station has no playable stream") }
             return
         }
-        _state.update { it.copy(current = station, errorMessage = null, isBuffering = true) }
+        _state.update {
+            it.copy(
+                current = station,
+                lastStation = station,
+                errorMessage = null,
+                isBuffering = true,
+            )
+        }
         connected.setMediaItem(station.toMediaItem(json, url))
         connected.prepare()
         connected.play()
@@ -129,6 +143,12 @@ class PlayerController(
         _state.update { it.copy(errorMessage = null) }
     }
 
+    fun setVolume(fraction: Float) {
+        val clamped = fraction.coerceIn(0f, 1f)
+        controller?.volume = clamped
+        _state.update { it.copy(volume = clamped) }
+    }
+
     fun setSleepTimer(minutes: Int?) {
         val connected = controller ?: return
         if (minutes == null || minutes <= 0) {
@@ -149,8 +169,10 @@ class PlayerController(
             it.copy(
                 connected = true,
                 current = station ?: it.current,
+                lastStation = station ?: it.lastStation,
                 isPlaying = connected.isPlaying,
                 isBuffering = connected.playbackState == Player.STATE_BUFFERING,
+                volume = connected.volume,
             )
         }
     }

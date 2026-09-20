@@ -43,6 +43,35 @@ class PlayerViewModel(
 
     fun stop() = controller.stop()
 
+    /** Power switch: off stops playback, on resumes the last station. */
+    fun togglePower() {
+        val state = controller.state.value
+        if (state.current != null) {
+            controller.stop()
+        } else {
+            state.lastStation?.let { play(it) }
+        }
+    }
+
+    /** Tuning: hop to another station in the same country. */
+    fun scan() {
+        val countryCode = controller.state.value.current?.countryCode.orEmpty()
+        if (countryCode.isBlank()) return
+        viewModelScope.launch {
+            radioRepository.randomStation(countryCode)?.let { station -> play(station) }
+        }
+    }
+
+    fun nudgeVolume(delta: Float) {
+        controller.setVolume(controller.state.value.volume + delta)
+    }
+
+    fun cycleSleepTimer() {
+        val current = controller.state.value.sleepTimerMinutes
+        val next = SLEEP_CYCLE.getOrNull(SLEEP_CYCLE.indexOf(current) + 1) ?: SLEEP_CYCLE.first()
+        controller.setSleepTimer(next)
+    }
+
     fun setSleepTimer(minutes: Int?) = controller.setSleepTimer(minutes)
 
     fun toggleFavorite(station: Station) {
@@ -53,5 +82,9 @@ class PlayerViewModel(
 
     fun setPlayerStyle(style: PlayerStyle) {
         viewModelScope.launch { settingsRepository.setPlayerStyleName(style.name) }
+    }
+
+    private companion object {
+        val SLEEP_CYCLE = listOf(null, 5, 15, 30, 60, 90)
     }
 }

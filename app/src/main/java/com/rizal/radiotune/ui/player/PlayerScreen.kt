@@ -8,6 +8,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -56,32 +57,21 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import com.rizal.radiotune.R
-import com.rizal.radiotune.data.model.Station
 import com.rizal.radiotune.playback.PlayerUiState
 import com.rizal.radiotune.ui.components.CassettePlayer
-import com.rizal.radiotune.ui.components.EmptyView
 import com.rizal.radiotune.ui.theme.PlayerSkin
 import com.rizal.radiotune.ui.theme.PlayerStyle
 import com.rizal.radiotune.ui.theme.skin
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlayerScreen(
     state: PlayerUiState,
     favoriteIds: Set<String>,
     playerStyle: PlayerStyle,
-    onSelectStyle: (PlayerStyle) -> Unit,
-    onBack: () -> Unit,
-    onTogglePlayPause: () -> Unit,
-    onStop: () -> Unit,
-    onToggleFavorite: (Station) -> Unit,
-    onSetSleepTimer: (Int?) -> Unit,
+    actions: PlayerActions,
     modifier: Modifier = Modifier,
 ) {
     val skin = playerStyle.skin()
-    var showSleepDialog by remember { mutableStateOf(false) }
-    var showStylePicker by remember { mutableStateOf(false) }
-    val station = state.current
 
     // The skinned backdrop can be light or dark regardless of the system theme,
     // so the status bar icons have to follow the style.
@@ -98,16 +88,50 @@ fun PlayerScreen(
         }
     }
 
-    Column(
+    BoxWithConstraints(
         modifier = modifier
             .fillMaxSize()
             .background(skin.backdrop)
             .windowInsetsPadding(WindowInsets.safeDrawing),
     ) {
+        if (maxWidth > maxHeight) {
+            RadioLandscape(
+                skin = skin,
+                state = state,
+                favoriteIds = favoriteIds,
+                playerStyle = playerStyle,
+                actions = actions,
+            )
+        } else {
+            PortraitPlayer(
+                skin = skin,
+                state = state,
+                favoriteIds = favoriteIds,
+                playerStyle = playerStyle,
+                actions = actions,
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PortraitPlayer(
+    skin: PlayerSkin,
+    state: PlayerUiState,
+    favoriteIds: Set<String>,
+    playerStyle: PlayerStyle,
+    actions: PlayerActions,
+) {
+    var showSleepDialog by remember { mutableStateOf(false) }
+    var showStylePicker by remember { mutableStateOf(false) }
+    val station = state.current
+
+    Column(Modifier.fillMaxSize()) {
         TopAppBar(
             title = { Text("Now playing") },
             navigationIcon = {
-                IconButton(onClick = onBack) {
+                IconButton(onClick = actions.onBack) {
                     Icon(painterResource(R.drawable.ic_arrow_back), contentDescription = "Back")
                 }
             },
@@ -126,7 +150,38 @@ fun PlayerScreen(
         )
 
         if (station == null) {
-            EmptyView("Nothing is playing right now")
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                Text(
+                    text = "Powered off",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = skin.content,
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = "Nothing is playing right now",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = skin.mutedContent,
+                    textAlign = TextAlign.Center,
+                )
+                if (state.lastStation != null) {
+                    Spacer(Modifier.height(24.dp))
+                    OutlinedButton(
+                        onClick = actions.onTogglePower,
+                        shape = skin.controlShape,
+                        border = BorderStroke(skin.borderWidth, skin.outline),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = skin.content),
+                    ) {
+                        Text("Power on")
+                    }
+                }
+            }
             return@Column
         }
 
@@ -195,7 +250,7 @@ fun PlayerScreen(
                 horizontalArrangement = Arrangement.spacedBy(24.dp),
             ) {
                 val isFavorite = station.id in favoriteIds
-                IconButton(onClick = { onToggleFavorite(station) }) {
+                IconButton(onClick = { actions.onToggleFavorite(station) }) {
                     Icon(
                         painter = painterResource(
                             if (isFavorite) R.drawable.ic_favorite else R.drawable.ic_favorite_border,
@@ -206,7 +261,7 @@ fun PlayerScreen(
                 }
 
                 FilledIconButton(
-                    onClick = onTogglePlayPause,
+                    onClick = actions.onPlayPause,
                     modifier = Modifier.size(72.dp),
                     shape = skin.controlShape,
                     colors = IconButtonDefaults.filledIconButtonColors(
@@ -253,7 +308,7 @@ fun PlayerScreen(
             Spacer(Modifier.height(24.dp))
 
             OutlinedButton(
-                onClick = onStop,
+                onClick = actions.onTogglePower,
                 shape = skin.controlShape,
                 border = BorderStroke(skin.borderWidth, skin.outline),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = skin.content),
@@ -268,7 +323,7 @@ fun PlayerScreen(
             skin = skin,
             currentMinutes = state.sleepTimerMinutes,
             onSelect = { minutes ->
-                onSetSleepTimer(minutes)
+                actions.onSetSleepTimer(minutes)
                 showSleepDialog = false
             },
             onDismiss = { showSleepDialog = false },
@@ -279,7 +334,7 @@ fun PlayerScreen(
         StylePickerDialog(
             current = playerStyle,
             onSelect = { style ->
-                onSelectStyle(style)
+                actions.onSelectStyle(style)
                 showStylePicker = false
             },
             onDismiss = { showStylePicker = false },
@@ -288,7 +343,7 @@ fun PlayerScreen(
 }
 
 @Composable
-private fun SleepTimerDialog(
+internal fun SleepTimerDialog(
     skin: PlayerSkin,
     currentMinutes: Int?,
     onSelect: (Int?) -> Unit,
@@ -358,7 +413,7 @@ private fun SleepTimerRow(
 }
 
 @Composable
-private fun StylePickerDialog(
+internal fun StylePickerDialog(
     current: PlayerStyle,
     onSelect: (PlayerStyle) -> Unit,
     onDismiss: () -> Unit,

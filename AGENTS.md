@@ -105,6 +105,14 @@ Key files and tuning points:
   shading is re-rendered on each animation frame.
 - Style preference: `SettingsRepository` (stores the enum name) → `PlayerViewModel`
   → picker dialog with live animated previews on the player screen.
+- Landscape now-playing: `ui/player/RadioLandscape.kt` — cassette on the left and a
+  working retro radio chassis on the right (power, play/pause, favourite, sleep
+  cycling, tuning scan, volume). Orientation is decided in `PlayerScreen` with
+  `maxWidth > maxHeight`. Both layouts share one `PlayerActions` bundle.
+- Power is a real toggle: `PlayerController.stop()` keeps `lastStation` so the
+  radio can be switched back on; `PlayerViewModel.scan()` plays a random station
+  from the same country (`RadioRepository.randomStation`, which bypasses the list
+  cache), and volume goes through `PlayerController.setVolume`.
 
 ## Playback notes
 

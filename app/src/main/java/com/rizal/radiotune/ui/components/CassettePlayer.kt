@@ -657,7 +657,7 @@ private fun DrawScope.drawReel(
     }
 }
 
-private const val CASSETTE_ASPECT = 0.63f
+internal const val CASSETTE_ASPECT = 0.63f
 private const val PLAYING_PERIOD_MS = 1600
 private const val BUFFERING_PERIOD_MS = 5200
 private const val TAKE_UP_RATIO = 1.55f

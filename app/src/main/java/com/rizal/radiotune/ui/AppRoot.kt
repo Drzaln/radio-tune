@@ -41,6 +41,7 @@ import com.rizal.radiotune.R
 import com.rizal.radiotune.ui.components.MiniPlayer
 import com.rizal.radiotune.ui.countries.CountriesScreen
 import com.rizal.radiotune.ui.favorites.FavoritesScreen
+import com.rizal.radiotune.ui.player.PlayerActions
 import com.rizal.radiotune.ui.player.PlayerScreen
 import com.rizal.radiotune.ui.player.PlayerViewModel
 import com.rizal.radiotune.ui.stations.StationsScreen
@@ -187,12 +188,17 @@ fun AppRoot(modifier: Modifier = Modifier) {
                     state = playerState,
                     favoriteIds = favoriteIds,
                     playerStyle = playerStyle,
-                    onSelectStyle = playerViewModel::setPlayerStyle,
-                    onBack = { navController.popBackStack() },
-                    onTogglePlayPause = playerViewModel::togglePlayPause,
-                    onStop = playerViewModel::stop,
-                    onToggleFavorite = playerViewModel::toggleFavorite,
-                    onSetSleepTimer = playerViewModel::setSleepTimer,
+                    actions = PlayerActions(
+                        onBack = { navController.popBackStack() },
+                        onSelectStyle = playerViewModel::setPlayerStyle,
+                        onPlayPause = playerViewModel::togglePlayPause,
+                        onTogglePower = playerViewModel::togglePower,
+                        onToggleFavorite = playerViewModel::toggleFavorite,
+                        onScan = playerViewModel::scan,
+                        onSetSleepTimer = playerViewModel::setSleepTimer,
+                        onCycleSleepTimer = playerViewModel::cycleSleepTimer,
+                        onVolumeDelta = playerViewModel::nudgeVolume,
+                    ),
                 )
             }
 
