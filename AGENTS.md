@@ -91,6 +91,9 @@ Key files and tuning points:
   `CassetteLook` (everything the cassette draws: geometry fractions, detail
   switches, and the optional `shellMid`/`sheen`/`bevel`/`glass`/`specular`/
   `occlusion` shading plus the `steppedShell` moulded-rim renderer).
+  All styles share the default `CassetteLook` silhouette — a large chamfered
+  sticker label with the tape window cut into it, ribbed edges and a moulded
+  bottom plate — and differ only by palette, geometry overrides and finishes.
   `CassettePlayer` takes a
   `CassetteLook`; it must not read `MaterialTheme` directly. A style owns the whole
   now-playing screen — backdrop, top bar, play/favourite/sleep/stop and the sleep

@@ -210,17 +210,6 @@ private fun DrawScope.drawShell(look: CassetteLook, w: Float, h: Float) {
         }
     }
 
-    if (look.showNotches) {
-        listOf(0.10f, 0.845f).forEach { x ->
-            drawRoundRect(
-                color = look.recess,
-                topLeft = Offset(w * x, h * 0.025f),
-                size = Size(w * 0.055f, h * 0.045f),
-                cornerRadius = CornerRadius(h * 0.012f, h * 0.012f),
-            )
-        }
-    }
-
     if (look.showScrews) {
         val screwRadius = h * 0.021f
         listOf(
@@ -277,7 +266,8 @@ private fun DrawScope.drawShell(look: CassetteLook, w: Float, h: Float) {
 
     if (look.showRuledLines) {
         repeat(2) { index ->
-            val y = labelTop + labelHeight * (0.46f + index * 0.20f)
+            // Kept in the upper part of the label, above the tape window.
+            val y = labelTop + labelHeight * (0.10f + index * 0.13f)
             drawLine(
                 color = look.line,
                 start = Offset(w * 0.12f, y),
@@ -367,12 +357,6 @@ private fun DrawScope.drawShell(look: CassetteLook, w: Float, h: Float) {
                     )
                 }
             }
-        }
-    }
-
-    if (look.showPinchRollers) {
-        listOf(0.36f, 0.64f).forEach { x ->
-            drawCircle(look.recess, h * 0.024f, Offset(w * x, h * 0.905f))
         }
     }
 
