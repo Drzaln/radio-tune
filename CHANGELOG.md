@@ -3,6 +3,15 @@
 Notable changes to RadioTune. Versions follow the git tags (`vX.Y.Z`); the
 Android `versionCode` is derived as `major * 10000 + minor * 100 + patch`.
 
+## [1.7.2] - 2026-09-19
+
+### Fixed
+
+- The landscape **SCAN** knob only worked once. Station list responses are cached
+  for ten minutes, and the random-station query matched that rule, so every scan
+  after the first was served the same cached response. The one-shot tuning request
+  now bypasses the HTTP cache.
+
 ## [1.7.1] - 2026-09-19
 
 ### Fixed
