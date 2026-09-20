@@ -74,6 +74,18 @@ Key files and tuning points:
 - Radio Browser click/stream resolution: `RadioRepository.registerClick`
 - Update source + asset names: `data/update/UpdateConfig.kt`
 - Update check throttle: `data/update/UpdateRepository.kt` (`CHECK_INTERVAL_MS`, 12h)
+- Playlist (.pls/.m3u) resolution: `RadioRepository.resolvePlayableUrl`
+
+## Playback notes
+
+Many Radio Browser entries are HLS (`.m3u8`), and `media3-exoplayer` does **not**
+bundle HLS — the `media3-exoplayer-hls` dependency is required. Without it those
+stations fail to play. Radio Browser also reports `codec = "UNKNOWN"` for exactly
+those streams; `Station.qualityLabel` hides it instead of rendering "UNKNOWN".
+
+Entries whose `url_resolved` is a `.pls`/`.m3u` playlist are resolved to their
+first stream URL before playback (`RadioRepository.resolvePlayableUrl`), since
+ExoPlayer cannot open those playlist containers.
 
 ## In-app updates
 

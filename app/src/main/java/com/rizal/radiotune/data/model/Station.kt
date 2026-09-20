@@ -30,7 +30,10 @@ data class Station(
 
     val qualityLabel: String
         get() = buildList {
-            if (codec.isNotBlank()) add(codec.uppercase())
+            // Radio Browser reports "UNKNOWN" for streams whose codec it cannot probe.
+            if (codec.isNotBlank() && !codec.equals("UNKNOWN", ignoreCase = true)) {
+                add(codec.uppercase())
+            }
             if (bitrate > 0) add("$bitrate kbps")
         }.joinToString(" · ")
 }

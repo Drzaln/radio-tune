@@ -21,7 +21,7 @@ class AppContainer(context: Context) {
 
     private val radioBrowserApi by lazy { NetworkFactory.createApi(okHttpClient, json) }
 
-    val radioRepository: RadioRepository by lazy { RadioRepository(radioBrowserApi) }
+    val radioRepository: RadioRepository by lazy { RadioRepository(radioBrowserApi, okHttpClient) }
 
     val favoritesRepository: FavoritesRepository by lazy {
         FavoritesRepository(appContext.dataStore, json)

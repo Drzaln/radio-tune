@@ -3,20 +3,30 @@ package com.rizal.radiotune.data.repository
 import com.rizal.radiotune.data.model.Country
 import com.rizal.radiotune.data.model.Station
 import com.rizal.radiotune.data.remote.RadioBrowserApi
+import com.rizal.radiotune.data.remote.RemoteConfig
 import com.rizal.radiotune.data.remote.dto.toCountry
 import com.rizal.radiotune.data.remote.dto.toStation
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import okhttp3.Request
 
 class RadioRepository(
     private val api: RadioBrowserApi,
+    baseClient: OkHttpClient,
 ) {
 
     private val networkScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    private val playlistClient = baseClient.newBuilder()
+        .cache(null)
+        .callTimeout(15, TimeUnit.SECONDS)
+        .build()
 
     @Volatile
     private var countriesCache: TimedCache<List<Country>>? = null
@@ -64,6 +74,46 @@ class RadioRepository(
             stationCache[key] = TimedCache(stations)
         }
         stations
+    }
+
+    /**
+     * Radio Browser's `url_resolved` is usually a direct stream, but some entries
+     * point at a `.pls`/`.m3u` playlist that ExoPlayer cannot open. Those are
+     * fetched once and replaced with their first stream URL.
+     */
+    suspend fun resolvePlayableUrl(station: Station): String = withContext(Dispatchers.IO) {
+        val url = station.playbackUrl
+        if (url.isBlank() || !looksLikePlaylist(url)) return@withContext url
+        runCatching { firstStreamFromPlaylist(url) }.getOrNull() ?: url
+    }
+
+    private fun looksLikePlaylist(url: String): Boolean {
+        val path = url.substringBefore('?').substringBefore('#').lowercase()
+        return path.endsWith(".pls") || path.endsWith(".m3u")
+    }
+
+    private fun firstStreamFromPlaylist(playlistUrl: String): String? {
+        val request = Request.Builder()
+            .url(playlistUrl)
+            .header("User-Agent", RemoteConfig.USER_AGENT)
+            .build()
+
+        playlistClient.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) return null
+            val body = response.body?.string() ?: return null
+            return parseFirstStreamUrl(body)
+        }
+    }
+
+    private fun parseFirstStreamUrl(body: String): String? {
+        val lines = body.lineSequence().map { it.trim() }.filter { it.isNotEmpty() }
+        val fromPls = lines
+            .firstOrNull { it.startsWith("File", ignoreCase = true) && it.contains('=') }
+            ?.substringAfter('=')
+            ?.trim()
+        val candidate = fromPls
+            ?: lines.firstOrNull { !it.startsWith("#") && it.startsWith("http", ignoreCase = true) }
+        return candidate?.takeIf { it.startsWith("http", ignoreCase = true) }
     }
 
     /** Fire-and-forget click registration; feeds Radio Browser's popularity ranking. */

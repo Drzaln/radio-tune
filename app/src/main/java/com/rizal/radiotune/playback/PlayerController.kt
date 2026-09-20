@@ -95,9 +95,8 @@ class PlayerController(
         _state.update { it.copy(connected = false, isPlaying = false, isBuffering = false) }
     }
 
-    fun play(station: Station) {
+    fun play(station: Station, url: String = station.playbackUrl) {
         val connected = controller ?: return
-        val url = station.playbackUrl
         if (url.isBlank()) {
             _state.update { it.copy(errorMessage = "This station has no playable stream") }
             return

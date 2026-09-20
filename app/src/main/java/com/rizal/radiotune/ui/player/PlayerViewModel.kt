@@ -24,8 +24,11 @@ class PlayerViewModel(
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     fun play(station: Station) {
-        controller.play(station)
         radioRepository.registerClick(station.id)
+        viewModelScope.launch {
+            val url = radioRepository.resolvePlayableUrl(station)
+            controller.play(station, url)
+        }
     }
 
     fun togglePlayPause() = controller.togglePlayPause()
