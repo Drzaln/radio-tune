@@ -16,15 +16,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.Dp
@@ -34,9 +39,9 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 /**
- * Classic Compact Cassette drawn with Canvas — no assets. The two reels spin
- * while [playing], slow down while buffering and freeze in place when paused.
- * Station artwork fills the label sticker when available.
+ * Retro Compact Cassette drawn with Canvas — no assets. The reels spin while
+ * [playing], slow down while buffering and freeze in place when paused. Station
+ * artwork fills the label sticker under the brand stripe.
  */
 @Composable
 fun CassettePlayer(
@@ -63,54 +68,134 @@ fun CassettePlayer(
         }
     }
 
-    val shellColor = MaterialTheme.colorScheme.surfaceVariant
-    val edgeColor = MaterialTheme.colorScheme.outlineVariant
-    val labelColor = MaterialTheme.colorScheme.surface
-    val recessColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.16f)
-    val tapeColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f)
-    val hubColor = if (playing) {
-        MaterialTheme.colorScheme.primary
-    } else {
-        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f)
-    }
-    val spokeColor = MaterialTheme.colorScheme.surface
+    val colors = MaterialTheme.colorScheme
+    val shellTop = colors.surfaceContainerHighest
+    val shellBottom = colors.surfaceContainerHigh
+    val edge = colors.outlineVariant
+    val label = colors.surface
+    val stripe = colors.primary
+    val recess = colors.onSurfaceVariant.copy(alpha = 0.18f)
+    val tape = colors.onSurfaceVariant.copy(alpha = 0.55f)
+    val line = colors.onSurfaceVariant.copy(alpha = 0.30f)
+    val hub = if (playing) colors.primary else colors.onSurfaceVariant.copy(alpha = 0.55f)
+    val spoke = colors.surface
+
+    val shellCorner = width * CASSETTE_ASPECT * 0.075f
 
     BoxWithConstraints(
-        modifier = modifier.size(width = width, height = width * CASSETTE_ASPECT),
+        modifier = modifier
+            .size(width = width, height = width * CASSETTE_ASPECT)
+            .shadow(elevation = 8.dp, shape = RoundedCornerShape(shellCorner), clip = false),
     ) {
         Canvas(Modifier.fillMaxSize()) {
             val w = size.width
             val h = size.height
-            val hairline = h * 0.009f
-            val shellCorner = h * 0.075f
+            val shellCornerPx = h * 0.075f
+            val hairline = h * 0.010f
 
             drawRoundRect(
-                color = shellColor,
-                cornerRadius = CornerRadius(shellCorner, shellCorner),
+                brush = Brush.verticalGradient(
+                    colors = listOf(shellTop, shellBottom),
+                    startY = 0f,
+                    endY = h,
+                ),
+                cornerRadius = CornerRadius(shellCornerPx, shellCornerPx),
             )
             drawRoundRect(
-                color = edgeColor,
-                cornerRadius = CornerRadius(shellCorner, shellCorner),
+                color = edge,
+                cornerRadius = CornerRadius(shellCornerPx, shellCornerPx),
                 style = Stroke(width = hairline),
             )
 
-            // Label sticker. Artwork is composited over this exact rect.
+            // Write-protect notches inside the top edge.
+            listOf(0.10f, 0.845f).forEach { x ->
+                drawRoundRect(
+                    color = recess,
+                    topLeft = Offset(w * x, h * 0.025f),
+                    size = Size(w * 0.055f, h * 0.045f),
+                    cornerRadius = CornerRadius(h * 0.012f, h * 0.012f),
+                )
+            }
+
+            // Corner screws.
+            val screwRadius = h * 0.021f
+            listOf(
+                Offset(w * 0.06f, h * 0.075f),
+                Offset(w * 0.94f, h * 0.075f),
+                Offset(w * 0.06f, h * 0.925f),
+                Offset(w * 0.94f, h * 0.925f),
+            ).forEach { center ->
+                drawCircle(shellBottom, screwRadius, center)
+                drawCircle(edge, screwRadius, center, style = Stroke(width = hairline))
+                drawLine(
+                    color = line,
+                    start = Offset(center.x - screwRadius * 0.55f, center.y),
+                    end = Offset(center.x + screwRadius * 0.55f, center.y),
+                    strokeWidth = screwRadius * 0.28f,
+                    cap = StrokeCap.Round,
+                )
+            }
+
+            // Label sticker with a brand stripe across the top.
             val labelLeft = w * 0.07f
             val labelTop = h * 0.085f
             val labelWidth = w * 0.86f
             val labelHeight = h * 0.40f
             val labelCorner = h * 0.03f
             drawRoundRect(
-                color = labelColor,
+                color = label,
                 topLeft = Offset(labelLeft, labelTop),
                 size = Size(labelWidth, labelHeight),
                 cornerRadius = CornerRadius(labelCorner, labelCorner),
             )
             drawRoundRect(
-                color = edgeColor,
+                color = edge,
                 topLeft = Offset(labelLeft, labelTop),
                 size = Size(labelWidth, labelHeight),
                 cornerRadius = CornerRadius(labelCorner, labelCorner),
+                style = Stroke(width = hairline),
+            )
+            val labelClip = Path().apply {
+                addRoundRect(
+                    RoundRect(
+                        rect = Rect(labelLeft, labelTop, labelLeft + labelWidth, labelTop + labelHeight),
+                        cornerRadius = CornerRadius(labelCorner, labelCorner),
+                    ),
+                )
+            }
+            clipPath(labelClip) {
+                drawRect(
+                    brush = Brush.horizontalGradient(
+                        colors = listOf(stripe, stripe.copy(alpha = 0.72f)),
+                    ),
+                    topLeft = Offset(labelLeft, labelTop),
+                    size = Size(labelWidth, h * 0.05f),
+                )
+            }
+
+            // Ruled writing lines, visible when there is no artwork.
+            repeat(2) { index ->
+                val y = h * (0.27f + index * 0.075f)
+                drawLine(
+                    color = line,
+                    start = Offset(w * 0.12f, y),
+                    end = Offset(w * 0.88f, y),
+                    strokeWidth = hairline,
+                )
+            }
+
+            // Tape window.
+            drawRoundRect(
+                color = recess,
+                topLeft = Offset(w * 0.22f, h * 0.79f),
+                size = Size(w * 0.56f, h * 0.145f),
+                cornerRadius = CornerRadius(h * 0.03f, h * 0.03f),
+            )
+            drawRoundRect(
+                color = edge,
+                topLeft = Offset(w * 0.22f, h * 0.79f),
+                size = Size(w * 0.56f, h * 0.145f),
+                cornerRadius = CornerRadius(h * 0.03f, h * 0.03f),
                 style = Stroke(width = hairline),
             )
 
@@ -119,43 +204,30 @@ fun CassettePlayer(
             val left = Offset(w * 0.30f, spoolY)
             val right = Offset(w * 0.70f, spoolY)
 
-            // Tape path running under both reels.
             val tapePath = Path().apply {
                 moveTo(left.x, left.y)
-                lineTo(left.x, h * 0.86f)
-                lineTo(right.x, h * 0.86f)
+                lineTo(left.x, h * 0.865f)
+                lineTo(right.x, h * 0.865f)
                 lineTo(right.x, right.y)
             }
             drawPath(
                 path = tapePath,
-                color = tapeColor,
+                color = tape,
                 style = Stroke(
-                    width = h * 0.030f,
+                    width = h * 0.028f,
                     cap = StrokeCap.Round,
                     join = StrokeJoin.Round,
                 ),
             )
 
-            val currentAngle = angle.value
-            drawReel(left, spoolRadius, currentAngle, recessColor, edgeColor, tapeColor, hubColor, spokeColor)
-            drawReel(
-                right,
-                spoolRadius,
-                currentAngle * TAKE_UP_RATIO,
-                recessColor,
-                edgeColor,
-                tapeColor,
-                hubColor,
-                spokeColor,
-            )
+            val a = angle.value
+            drawReel(left, spoolRadius, a, recess, edge, tape, hub, spoke, 0.70f)
+            drawReel(right, spoolRadius, a * TAKE_UP_RATIO, recess, edge, tape, hub, spoke, 0.58f)
 
-            // Head opening along the bottom edge.
-            drawRoundRect(
-                color = recessColor,
-                topLeft = Offset(w * 0.42f, h * 0.90f),
-                size = Size(w * 0.16f, h * 0.06f),
-                cornerRadius = CornerRadius(h * 0.02f, h * 0.02f),
-            )
+            // Pinch roller cut-outs either side of the head opening.
+            listOf(0.36f, 0.64f).forEach { x ->
+                drawCircle(recess, h * 0.024f, Offset(w * x, h * 0.905f))
+            }
         }
 
         if (!artworkUrl.isNullOrBlank()) {
@@ -165,9 +237,16 @@ fun CassettePlayer(
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .align(Alignment.TopCenter)
-                    .offset(y = maxHeight * 0.085f)
-                    .size(width = maxWidth * 0.86f, height = maxHeight * 0.40f)
-                    .clip(RoundedCornerShape(maxHeight * 0.03f)),
+                    .offset(y = maxHeight * 0.135f)
+                    .size(width = maxWidth * 0.86f, height = maxHeight * 0.35f)
+                    .clip(
+                        RoundedCornerShape(
+                            topStart = 0.dp,
+                            topEnd = 0.dp,
+                            bottomEnd = maxHeight * 0.03f,
+                            bottomStart = maxHeight * 0.03f,
+                        ),
+                    ),
             )
         }
     }
@@ -182,17 +261,24 @@ private fun DrawScope.drawReel(
     tapeColor: Color,
     hubColor: Color,
     spokeColor: Color,
+    tapePackScale: Float,
 ) {
     drawCircle(recessColor, radius, center)
     drawCircle(edgeColor, radius, center, style = Stroke(width = radius * 0.06f))
-    drawCircle(tapeColor, radius * 0.68f, center, style = Stroke(width = radius * 0.26f))
-    drawCircle(hubColor, radius * 0.34f, center)
+    drawCircle(
+        color = tapeColor,
+        radius = radius * tapePackScale,
+        center = center,
+        style = Stroke(width = radius * (tapePackScale - 0.30f)),
+    )
+    drawCircle(hubColor, radius * 0.32f, center)
 
+    // Classic six-slot hub.
     rotate(angleDegrees, center) {
-        repeat(3) { index ->
-            val radians = Math.toRadians((index * 120).toDouble())
-            val inner = radius * 0.10f
-            val outer = radius * 0.28f
+        repeat(6) { index ->
+            val radians = Math.toRadians((index * 60).toDouble())
+            val inner = radius * 0.09f
+            val outer = radius * 0.26f
             drawLine(
                 color = spokeColor,
                 start = Offset(
@@ -203,7 +289,7 @@ private fun DrawScope.drawReel(
                     center.x + cos(radians).toFloat() * outer,
                     center.y + sin(radians).toFloat() * outer,
                 ),
-                strokeWidth = radius * 0.11f,
+                strokeWidth = radius * 0.075f,
                 cap = StrokeCap.Round,
             )
         }
