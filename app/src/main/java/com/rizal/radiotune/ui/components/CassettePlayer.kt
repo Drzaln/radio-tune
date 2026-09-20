@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -98,7 +99,7 @@ fun CassettePlayer(
             drawReels(angle.value, look, shellWidth.toPx(), shellHeight.toPx())
         }
 
-        // Station logo: a medium rounded badge, centred at the top of the label.
+        // Station logo: a small circular badge in the label's top-left corner.
         if (!artworkUrl.isNullOrBlank()) {
             val logoSize = shellHeight * LOGO_SIZE
             AsyncImage(
@@ -106,10 +107,13 @@ fun CassettePlayer(
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .offset(y = shellHeight * (look.labelTop + look.labelHeight * LOGO_TOP))
+                    .align(Alignment.TopStart)
+                    .offset(
+                        x = shellWidth * (LABEL_LEFT + LOGO_LEFT),
+                        y = shellHeight * (look.labelTop + look.labelHeight * LOGO_TOP),
+                    )
                     .size(logoSize)
-                    .clip(RoundedCornerShape(logoSize * LOGO_CORNER)),
+                    .clip(CircleShape),
             )
         }
     }
@@ -663,6 +667,6 @@ private const val LABEL_CORNER = 0.03f
 private const val STRIPE_HEIGHT = 0.05f
 private const val SPOOL_LEFT = 0.30f
 private const val SPOOL_RIGHT = 0.70f
-private const val LOGO_SIZE = 0.24f
-private const val LOGO_TOP = 0.10f
-private const val LOGO_CORNER = 0.26f
+private const val LOGO_SIZE = 0.15f
+private const val LOGO_TOP = 0.08f
+private const val LOGO_LEFT = 0.025f

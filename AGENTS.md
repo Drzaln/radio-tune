@@ -83,8 +83,8 @@ Key files and tuning points:
 - Update check throttle: `data/update/UpdateRepository.kt` (`CHECK_INTERVAL_MS`, 12h)
 - Playlist (.pls/.m3u) resolution: `RadioRepository.resolvePlayableUrl`
 - Player artwork: `ui/components/CassettePlayer.kt` — Canvas cassette whose reels
-  spin on play (freeze in place on pause); the station logo is a rounded badge
-  centred at the top of the label. Favicons
+  spin on play (freeze in place on pause); the station logo is a small circular
+  badge in the label's top-left corner. Favicons
   load through Coil in `StationAvatar` (`AsyncImage` over the vector fallback).
 - Player styles: `ui/theme/PlayerStyle.kt` — `PlayerStyle` (CLASSIC, MINIMAL,
   REALISM, SEMI_REALISM) → `PlayerSkin` (backdrop, surfaces, content/muted/accent
