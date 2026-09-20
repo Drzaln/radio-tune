@@ -6,6 +6,7 @@ import android.os.Bundle
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
@@ -44,6 +45,18 @@ class RadioPlayerService : MediaSessionService() {
             )
             .setHandleAudioBecomingNoisy(true)
             .setWakeMode(C.WAKE_MODE_NETWORK)
+            .setLoadControl(
+                DefaultLoadControl.Builder()
+                    // Live radio: start on a small buffer, grow while playing.
+                    .setBufferDurationsMs(
+                        MIN_BUFFER_MS,
+                        MAX_BUFFER_MS,
+                        BUFFER_FOR_PLAYBACK_MS,
+                        BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS,
+                    )
+                    .setPrioritizeTimeOverSizeThresholds(true)
+                    .build(),
+            )
             .build()
 
         mediaSession = MediaSession.Builder(this, player)
@@ -142,5 +155,10 @@ class RadioPlayerService : MediaSessionService() {
         const val FADE_STEPS = 20
         const val FADE_TICK_MS = 500L
         const val MAX_SLEEP_MINUTES = 24 * 60
+
+        const val MIN_BUFFER_MS = 1_500
+        const val MAX_BUFFER_MS = 30_000
+        const val BUFFER_FOR_PLAYBACK_MS = 1_000
+        const val BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS = 2_000
     }
 }
