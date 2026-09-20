@@ -3,6 +3,21 @@
 Notable changes to RadioTune. Versions follow the git tags (`vX.Y.Z`); the
 Android `versionCode` is derived as `major * 10000 + minor * 100 + patch`.
 
+## [1.4.1] - 2026-09-19
+
+### Changed
+
+- **Realism** style reworked to look like real hardware: dark moulded plastic lit
+  from the top-left, a stepped shell (body, beveled rim, raised face plate), a
+  broad specular highlight, and occlusion shading around the label, inside the
+  tape window and inside the recessed spool wells.
+
+### Fixed
+
+- The tape is now visible through the tape window. It was drawn before the
+  window's opaque recess, which painted over it in every style with a window
+  (Classic, Brutalist and Realism).
+
 ## [1.4.0] - 2026-09-19
 
 ### Added
