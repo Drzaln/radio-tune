@@ -203,14 +203,27 @@ private fun PortraitPlayer(
             )
             Spacer(Modifier.height(24.dp))
 
+            val nowPlaying = state.nowPlayingTitle
             Text(
-                text = station.name,
+                text = nowPlaying ?: station.name,
                 style = MaterialTheme.typography.headlineSmall,
                 color = skin.content,
                 textAlign = TextAlign.Center,
                 maxLines = 3,
                 overflow = TextOverflow.Ellipsis,
             )
+
+            if (nowPlaying != null) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = station.name,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = skin.mutedContent,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
 
             if (station.location.isNotBlank()) {
                 Spacer(Modifier.height(8.dp))

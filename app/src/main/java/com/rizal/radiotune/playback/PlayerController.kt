@@ -7,9 +7,11 @@ import android.os.SystemClock
 import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
 import androidx.media3.common.MediaMetadata
+import androidx.media3.common.Metadata
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.extractor.metadata.icy.IcyInfo
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import com.google.common.util.concurrent.ListenableFuture
@@ -31,6 +33,8 @@ data class PlayerUiState(
     val volume: Float = 1f,
     val errorMessage: String? = null,
     val sleepTimerMinutes: Int? = null,
+    /** ICY "now playing" track title, null when the stream sends none. */
+    val nowPlayingTitle: String? = null,
 )
 
 /**
@@ -72,6 +76,19 @@ class PlayerController(
         override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
             mediaMetadata.toStation(json)?.let { station ->
                 _state.update { it.copy(current = station) }
+            }
+        }
+
+        override fun onMetadata(metadata: Metadata) {
+            val title = (0 until metadata.length())
+                .map { metadata.get(it) }
+                .filterIsInstance<IcyInfo>()
+                .firstOrNull()
+                ?.title
+                ?.trim()
+                .orEmpty()
+            if (title.isNotEmpty()) {
+                _state.update { it.copy(nowPlayingTitle = title) }
             }
         }
 
@@ -142,6 +159,7 @@ class PlayerController(
                 lastStation = station,
                 errorMessage = null,
                 isBuffering = true,
+                nowPlayingTitle = null,
             )
         }
         connected.setMediaItem(station.toMediaItem(json, url))
@@ -163,7 +181,13 @@ class PlayerController(
         controller?.stop()
         controller?.clearMediaItems()
         _state.update {
-            it.copy(current = null, isPlaying = false, isBuffering = false, errorMessage = null)
+            it.copy(
+                current = null,
+                isPlaying = false,
+                isBuffering = false,
+                errorMessage = null,
+                nowPlayingTitle = null,
+            )
         }
     }
 

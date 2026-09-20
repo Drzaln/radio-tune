@@ -121,6 +121,7 @@ fun RadioLandscape(
                 DialWindow(
                     skin = skin,
                     station = station,
+                    nowPlayingTitle = state.nowPlayingTitle,
                     live = state.isPlaying,
                     modifier = Modifier.weight(1f).fillMaxWidth(),
                 )
@@ -164,6 +165,7 @@ fun RadioLandscape(
 private fun DialWindow(
     skin: PlayerSkin,
     station: Station?,
+    nowPlayingTitle: String?,
     live: Boolean,
     modifier: Modifier = Modifier,
 ) {
@@ -180,12 +182,22 @@ private fun DialWindow(
         ) {
             Column {
                 Text(
-                    text = station?.name ?: "POWERED OFF",
+                    text = nowPlayingTitle ?: station?.name ?: "POWERED OFF",
                     style = MaterialTheme.typography.titleMedium,
                     color = skin.content,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
+                if (nowPlayingTitle != null && station != null) {
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        text = station.name,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = skin.mutedContent,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
                 val meta = station?.let { current ->
                     listOf(current.location, current.qualityLabel)
                         .filter { it.isNotBlank() }
