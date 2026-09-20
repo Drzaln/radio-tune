@@ -65,8 +65,8 @@ class PlayerViewModel(
     fun setVolume(fraction: Float) = controller.setVolume(fraction)
 
     fun cycleSleepTimer() {
-        val current = controller.state.value.sleepTimerMinutes
-        val next = SLEEP_CYCLE.getOrNull(SLEEP_CYCLE.indexOf(current) + 1) ?: SLEEP_CYCLE.first()
+        val current = controller.state.value.sleepTimerMinutes ?: 0
+        val next = SLEEP_CYCLE.firstOrNull { it != null && it > current }
         controller.setSleepTimer(next)
     }
 

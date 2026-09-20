@@ -3,6 +3,8 @@ package com.rizal.radiotune.playback
 import android.app.PendingIntent
 import android.content.Intent
 import android.os.Bundle
+import android.os.SystemClock
+import androidx.core.os.bundleOf
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.util.UnstableApi
@@ -133,6 +135,7 @@ class RadioPlayerService : MediaSessionService() {
                     sleepTimerJob?.cancel()
                     sleepTimerJob = null
                     player.volume = 1f
+                    publishSleepTimer(minutes = null, deadlineMs = null)
                 }
             }
             return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
@@ -142,12 +145,33 @@ class RadioPlayerService : MediaSessionService() {
     private fun scheduleSleepTimer(minutes: Int) {
         sleepTimerJob?.cancel()
         sleepTimerJob = null
-        if (minutes <= 0) return
+        val clamped = minutes.coerceAtMost(MAX_SLEEP_MINUTES)
+        if (clamped <= 0) {
+            publishSleepTimer(minutes = null, deadlineMs = null)
+            return
+        }
+
+        val durationMs = clamped * 60_000L
+        publishSleepTimer(clamped, SystemClock.elapsedRealtime() + durationMs)
 
         sleepTimerJob = serviceScope.launch {
-            delay(minutes.coerceAtMost(MAX_SLEEP_MINUTES) * 60_000L)
+            delay(durationMs)
             fadeOutAndPause()
+            publishSleepTimer(minutes = null, deadlineMs = null)
         }
+    }
+
+    /**
+     * Publishes the running timer as session extras. The controller reads them
+     * on connect, so the countdown survives UI reconnects and process death.
+     */
+    private fun publishSleepTimer(minutes: Int?, deadlineMs: Long?) {
+        mediaSession?.setSessionExtras(
+            bundleOf(
+                PlayerCommands.EXTRA_SLEEP_TIMER_MINUTES to (minutes ?: 0),
+                PlayerCommands.EXTRA_SLEEP_TIMER_DEADLINE_MS to (deadlineMs ?: 0L),
+            ),
+        )
     }
 
     private suspend fun fadeOutAndPause() {

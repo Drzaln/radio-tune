@@ -3,6 +3,7 @@ package com.rizal.radiotune.playback
 import android.content.ComponentName
 import android.content.Context
 import android.os.Bundle
+import android.os.SystemClock
 import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
 import androidx.media3.common.MediaMetadata
@@ -18,6 +19,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.serialization.json.Json
+import kotlin.math.ceil
 
 data class PlayerUiState(
     val connected: Boolean = false,
@@ -78,10 +80,18 @@ class PlayerController(
         }
     }
 
+    private val sessionListener = object : MediaController.Listener {
+        override fun onExtrasChanged(controller: MediaController, extras: Bundle) {
+            _state.update { it.copy(sleepTimerMinutes = extras.toSleepTimerMinutes()) }
+        }
+    }
+
     fun connect() {
         if (controllerFuture != null) return
         val token = SessionToken(context, ComponentName(context, RadioPlayerService::class.java))
-        val future = MediaController.Builder(context, token).buildAsync()
+        val future = MediaController.Builder(context, token)
+            .setListener(sessionListener)
+            .buildAsync()
         controllerFuture = future
         future.addListener(
             {
@@ -191,9 +201,20 @@ class PlayerController(
                 isPlaying = connected.isPlaying,
                 isBuffering = connected.playbackState == Player.STATE_BUFFERING,
                 volume = connected.volume,
+                sleepTimerMinutes = connected.sessionExtras.toSleepTimerMinutes(),
             )
         }
     }
+}
+
+/** Reads the sleep timer published as session extras; null when none is active. */
+private fun Bundle?.toSleepTimerMinutes(): Int? {
+    val deadline = this?.getLong(PlayerCommands.EXTRA_SLEEP_TIMER_DEADLINE_MS, 0L) ?: 0L
+    val minutes = this?.getInt(PlayerCommands.EXTRA_SLEEP_TIMER_MINUTES, 0) ?: 0
+    if (minutes <= 0 || deadline <= 0L) return null
+    val remainingMs = deadline - SystemClock.elapsedRealtime()
+    if (remainingMs <= 0L) return null
+    return ceil(remainingMs / 60_000.0).toInt().coerceAtLeast(1)
 }
 
 private fun PlaybackException.toUserMessage(): String = when (errorCode) {
