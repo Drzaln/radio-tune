@@ -3,6 +3,15 @@
 Notable changes to RadioTune. Versions follow the git tags (`vX.Y.Z`); the
 Android `versionCode` is derived as `major * 10000 + minor * 100 + patch`.
 
+## [1.2.1] - 2026-09-19
+
+### Changed
+
+- Redrew the now-playing cassette in classic Compact Cassette proportions:
+  hairline outlines, a proper label sticker, thinner spool rings with a small
+  3-slot hub, a tape path running under the reels, and the head opening at the
+  bottom edge. The chunky tape bar and corner screws are gone.
+
 ## [1.2.0] - 2026-09-19
 
 ### Added
