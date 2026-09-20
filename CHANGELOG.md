@@ -3,6 +3,21 @@
 Notable changes to RadioTune. Versions follow the git tags (`vX.Y.Z`); the
 Android `versionCode` is derived as `major * 10000 + minor * 100 + patch`.
 
+## [1.6.0] - 2026-09-19
+
+### Added
+
+- **Landscape now-playing screen**: the cassette on the left and a working retro
+  radio chassis on the right — power, play/pause, favourite, a cycling sleep
+  control, a tuning knob that scans to another station in the same country, and a
+  volume knob (vertical drag). The dial window shows the station and a needle at a
+  stable pseudo-frequency.
+
+### Changed
+
+- Power is now a real toggle: stopping keeps the last station, so the radio can be
+  switched back on from either orientation.
+
 ## [1.5.1] - 2026-09-19
 
 ### Changed
