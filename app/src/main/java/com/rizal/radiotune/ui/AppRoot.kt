@@ -29,6 +29,7 @@ import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -83,8 +84,12 @@ fun AppRoot(modifier: Modifier = Modifier) {
     val snackbarHostState = remember { SnackbarHostState() }
     LaunchedEffect(playerState.errorMessage) {
         playerState.errorMessage?.let { message ->
-            snackbarHostState.showSnackbar(message)
+            val result = snackbarHostState.showSnackbar(
+                message = message,
+                actionLabel = if (playerState.connected) null else "Retry",
+            )
             playerViewModel.dismissError()
+            if (result == SnackbarResult.ActionPerformed) playerViewModel.retryConnection()
         }
     }
 

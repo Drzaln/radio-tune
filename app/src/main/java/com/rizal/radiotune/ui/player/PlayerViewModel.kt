@@ -78,6 +78,8 @@ class PlayerViewModel(
 
     fun dismissError() = controller.clearError()
 
+    fun retryConnection() = controller.retryConnect()
+
     fun setPlayerStyle(style: PlayerStyle) {
         viewModelScope.launch { settingsRepository.setPlayerStyleName(style.name) }
     }

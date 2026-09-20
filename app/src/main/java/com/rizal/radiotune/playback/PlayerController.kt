@@ -85,13 +85,31 @@ class PlayerController(
         controllerFuture = future
         future.addListener(
             {
-                val connected = runCatching { future.get() }.getOrNull() ?: return@addListener
+                val connected = runCatching { future.get() }.getOrNull()
+                if (connected == null) {
+                    controllerFuture = null
+                    _state.update {
+                        it.copy(
+                            connected = false,
+                            errorMessage = "Could not connect to the playback service",
+                        )
+                    }
+                    return@addListener
+                }
                 controller = connected
                 connected.addListener(listener)
                 syncFrom(connected)
             },
             mainExecutor,
         )
+    }
+
+    /** Retries a failed [connect]; no-op while a controller is already attached. */
+    fun retryConnect() {
+        if (controller != null) return
+        controllerFuture = null
+        _state.update { it.copy(errorMessage = null) }
+        connect()
     }
 
     fun release() {
