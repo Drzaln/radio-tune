@@ -12,10 +12,13 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -36,6 +39,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.rizal.radiotune.R
 import com.rizal.radiotune.data.model.Station
+import com.rizal.radiotune.data.model.StationSort
 import com.rizal.radiotune.playback.PlayerUiState
 import com.rizal.radiotune.ui.AppViewModelProvider
 import com.rizal.radiotune.ui.components.EmptyView
@@ -74,7 +78,8 @@ fun StationsScreen(
 
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
     var searchFocused by remember { mutableStateOf(false) }
-    val searching = state.query.isNotEmpty() || searchFocused
+    var showSortMenu by remember { mutableStateOf(false) }
+    val searching = state.query.isNotEmpty() || state.tag.isNotEmpty() || searchFocused
     val barCollapsed = scrollBehavior.state.collapsedFraction >= 1f
 
     Column(
@@ -91,20 +96,59 @@ fun StationsScreen(
                     Icon(painterResource(R.drawable.ic_arrow_back), contentDescription = "Back")
                 }
             },
+            actions = {
+                Box {
+                    TextButton(onClick = { showSortMenu = true }) {
+                        Text("${state.sort.label} ▾")
+                    }
+                    DropdownMenu(
+                        expanded = showSortMenu,
+                        onDismissRequest = { showSortMenu = false },
+                    ) {
+                        StationSort.entries.forEach { option ->
+                            DropdownMenuItem(
+                                text = { Text(option.label) },
+                                onClick = {
+                                    viewModel.onSortChange(option)
+                                    showSortMenu = false
+                                },
+                                trailingIcon = {
+                                    if (option == state.sort) {
+                                        Icon(
+                                            painterResource(R.drawable.ic_check),
+                                            contentDescription = null,
+                                        )
+                                    }
+                                },
+                            )
+                        }
+                    }
+                }
+            },
             scrollBehavior = scrollBehavior,
         )
 
         // Collapses with the bar unless the user is actually searching.
         AnimatedVisibility(visible = !barCollapsed || searching) {
-            SearchField(
-                value = state.query,
-                onValueChange = viewModel::onQueryChange,
-                placeholder = "Search stations",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 4.dp)
-                    .onFocusChanged { searchFocused = it.isFocused },
-            )
+            Column {
+                SearchField(
+                    value = state.query,
+                    onValueChange = viewModel::onQueryChange,
+                    placeholder = "Search stations",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp)
+                        .onFocusChanged { searchFocused = it.isFocused },
+                )
+                SearchField(
+                    value = state.tag,
+                    onValueChange = viewModel::onTagChange,
+                    placeholder = "Filter by genre or tag",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                )
+            }
         }
 
         when {

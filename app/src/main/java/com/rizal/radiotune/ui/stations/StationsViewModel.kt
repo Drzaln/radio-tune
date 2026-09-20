@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.rizal.radiotune.data.model.Station
+import com.rizal.radiotune.data.model.StationSort
 import com.rizal.radiotune.data.repository.RadioRepository
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -20,6 +21,8 @@ import java.net.UnknownHostException
 data class StationsUiState(
     val stations: List<Station> = emptyList(),
     val query: String = "",
+    val tag: String = "",
+    val sort: StationSort = StationSort.POPULARITY,
     val isLoading: Boolean = false,
     val isLoadingMore: Boolean = false,
     val endReached: Boolean = false,
@@ -40,6 +43,7 @@ class StationsViewModel(
 
     private var loadJob: Job? = null
     private var queryJob: Job? = null
+    private var tagJob: Job? = null
     private var offset = 0
 
     init {
@@ -53,6 +57,21 @@ class StationsViewModel(
             delay(SEARCH_DEBOUNCE_MS)
             load(reset = true)
         }
+    }
+
+    fun onTagChange(tag: String) {
+        _state.update { it.copy(tag = tag) }
+        tagJob?.cancel()
+        tagJob = viewModelScope.launch {
+            delay(SEARCH_DEBOUNCE_MS)
+            load(reset = true)
+        }
+    }
+
+    fun onSortChange(sort: StationSort) {
+        if (_state.value.sort == sort) return
+        _state.update { it.copy(sort = sort) }
+        load(reset = true)
     }
 
     fun loadMore() {
@@ -73,8 +92,17 @@ class StationsViewModel(
                 _state.update { it.copy(isLoadingMore = true, error = null) }
             }
 
-            val query = _state.value.query
-            runCatching { repository.getStations(countryCode, query, offset, RadioRepository.PAGE_SIZE) }
+            val current = _state.value
+            runCatching {
+                repository.getStations(
+                    countryCode = countryCode,
+                    query = current.query,
+                    tag = current.tag,
+                    sort = current.sort,
+                    offset = offset,
+                    limit = RadioRepository.PAGE_SIZE,
+                )
+            }
                 .onSuccess { page ->
                     offset += page.size
                     _state.update { current ->

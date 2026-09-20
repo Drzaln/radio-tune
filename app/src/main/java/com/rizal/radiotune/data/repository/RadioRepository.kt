@@ -2,6 +2,7 @@ package com.rizal.radiotune.data.repository
 
 import com.rizal.radiotune.data.model.Country
 import com.rizal.radiotune.data.model.Station
+import com.rizal.radiotune.data.model.StationSort
 import com.rizal.radiotune.data.remote.RadioBrowserApi
 import com.rizal.radiotune.data.remote.RemoteConfig
 import com.rizal.radiotune.data.remote.dto.toCountry
@@ -50,10 +51,12 @@ class RadioRepository(
     suspend fun getStations(
         countryCode: String,
         query: String = "",
+        tag: String = "",
+        sort: StationSort = StationSort.POPULARITY,
         offset: Int = 0,
         limit: Int = PAGE_SIZE,
     ): List<Station> = withContext(Dispatchers.IO) {
-        val key = "$countryCode|${query.trim().lowercase()}"
+        val key = "$countryCode|${query.trim().lowercase()}|${tag.trim().lowercase()}|${sort.name}"
         if (offset == 0) {
             stationCache[key]
                 ?.takeIf { it.isFresh(STATIONS_TTL_MS) }
@@ -63,6 +66,9 @@ class RadioRepository(
         val stations = api.searchStations(
             countryCode = countryCode.ifBlank { null },
             name = query.trim().ifBlank { null },
+            tag = tag.trim().ifBlank { null },
+            order = sort.apiOrder,
+            reverse = sort.reverse,
             limit = limit,
             offset = offset,
         )
