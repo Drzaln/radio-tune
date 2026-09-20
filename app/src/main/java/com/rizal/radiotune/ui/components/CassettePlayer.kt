@@ -33,9 +33,12 @@ import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import coil3.compose.LocalPlatformContext
+import coil3.request.ImageRequest
 import com.rizal.radiotune.ui.theme.CassetteLook
 import com.rizal.radiotune.ui.theme.LabelBand
 import kotlin.math.cos
@@ -102,8 +105,12 @@ fun CassettePlayer(
         // Station logo: a small circular badge in the label's top-left corner.
         if (!artworkUrl.isNullOrBlank()) {
             val logoSize = shellHeight * LOGO_SIZE
+            val logoPx = with(LocalDensity.current) { logoSize.roundToPx() }
             AsyncImage(
-                model = artworkUrl,
+                model = ImageRequest.Builder(LocalPlatformContext.current)
+                    .data(artworkUrl)
+                    .size(logoPx, logoPx)
+                    .build(),
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
