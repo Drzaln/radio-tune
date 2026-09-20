@@ -23,6 +23,8 @@ interface RadioBrowserApi {
         @Query("reverse") reverse: Boolean = true,
         @Query("limit") limit: Int = 100,
         @Query("offset") offset: Int = 0,
+        /** Set for one-shot queries (tuning) that must not be served from cache. */
+        @Query("_") cacheBuster: Long? = null,
     ): List<StationDto>
 
     @Headers("Accept: application/json")

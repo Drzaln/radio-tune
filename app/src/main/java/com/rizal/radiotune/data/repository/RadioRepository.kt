@@ -117,14 +117,18 @@ class RadioRepository(
     }
 
     /**
-     * A fresh random station in [countryCode]. Deliberately bypasses the list
-     * cache, otherwise "tuning" would keep returning the same station.
+     * A fresh random station in [countryCode].
+     *
+     * `order=random` is a one-shot query, so it must not be served from the HTTP
+     * cache: the list endpoints are marked cacheable for 10 minutes, and without a
+     * cache buster tuning would keep returning the same station.
      */
     suspend fun randomStation(countryCode: String): Station? = withContext(Dispatchers.IO) {
         api.searchStations(
             countryCode = countryCode.ifBlank { null },
             order = "random",
             limit = 1,
+            cacheBuster = System.nanoTime(),
         ).firstOrNull()
             ?.toStation()
             ?.takeIf { it.playbackUrl.isNotBlank() }
