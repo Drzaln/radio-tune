@@ -307,28 +307,15 @@ private fun DrawScope.drawShell(look: CassetteLook, w: Float, h: Float) {
     }
 
     val spoolY = h * 0.665f
-    val spoolRadius = h * 0.145f
 
-    // Tape running under both reels.
-    val tapePath = Path().apply {
-        moveTo(w * 0.30f, spoolY)
-        lineTo(w * 0.30f, h * 0.865f)
-        lineTo(w * 0.70f, h * 0.865f)
-        lineTo(w * 0.70f, spoolY)
-    }
-    drawPath(
-        path = tapePath,
-        color = look.tape,
-        style = Stroke(width = h * 0.028f, cap = StrokeCap.Round, join = StrokeJoin.Round),
-    )
+    val windowLeft = w * 0.22f
+    val windowTop = h * 0.79f
+    val windowWidth = w * 0.56f
+    val windowHeight = h * 0.145f
+    val windowCorner = h * 0.03f
 
     if (look.detailed) {
-        // Tape window.
-        val windowLeft = w * 0.22f
-        val windowTop = h * 0.79f
-        val windowWidth = w * 0.56f
-        val windowHeight = h * 0.145f
-        val windowCorner = h * 0.03f
+        // Tape window opening.
         drawRoundRect(
             color = look.recess,
             topLeft = Offset(windowLeft, windowTop),
@@ -353,7 +340,23 @@ private fun DrawScope.drawShell(look: CassetteLook, w: Float, h: Float) {
                 style = Stroke(width = stroke * 2.4f),
             )
         }
+    }
 
+    // Tape running under both reels. Drawn after the window opening so it shows
+    // through it instead of being painted over by the recess.
+    val tapePath = Path().apply {
+        moveTo(w * 0.30f, spoolY)
+        lineTo(w * 0.30f, h * 0.865f)
+        lineTo(w * 0.70f, h * 0.865f)
+        lineTo(w * 0.70f, spoolY)
+    }
+    drawPath(
+        path = tapePath,
+        color = look.tape,
+        style = Stroke(width = h * 0.028f, cap = StrokeCap.Round, join = StrokeJoin.Round),
+    )
+
+    if (look.detailed) {
         // Reflection across the glass.
         look.glass?.let { glass ->
             val windowClip = Path().apply {
