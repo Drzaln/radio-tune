@@ -23,6 +23,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
@@ -130,37 +131,41 @@ private fun DrawScope.drawShell(look: CassetteLook, w: Float, h: Float) {
         )
     }
 
-    if (look.useGradient) {
-        drawRoundRect(
-            brush = Brush.verticalGradient(
-                colors = listOfNotNull(look.shellTop, look.shellMid, look.shellBottom),
-                startY = 0f,
-                endY = h,
-            ),
-            cornerRadius = CornerRadius(corner, corner),
-        )
+    if (look.steppedShell) {
+        drawSteppedShell(look, w, h, corner, stroke)
     } else {
-        drawRoundRect(color = look.shellTop, cornerRadius = CornerRadius(corner, corner))
-    }
-    drawRoundRect(
-        color = look.edge,
-        cornerRadius = CornerRadius(corner, corner),
-        style = Stroke(width = stroke),
-    )
-
-    // Moulded inner lip.
-    look.bevel?.let { bevel ->
-        val inset = stroke * 1.4f
+        if (look.useGradient) {
+            drawRoundRect(
+                brush = Brush.verticalGradient(
+                    colors = listOfNotNull(look.shellTop, look.shellMid, look.shellBottom),
+                    startY = 0f,
+                    endY = h,
+                ),
+                cornerRadius = CornerRadius(corner, corner),
+            )
+        } else {
+            drawRoundRect(color = look.shellTop, cornerRadius = CornerRadius(corner, corner))
+        }
         drawRoundRect(
-            color = bevel,
-            topLeft = Offset(inset, inset),
-            size = Size(w - inset * 2f, h - inset * 2f),
-            cornerRadius = CornerRadius(
-                (corner - inset).coerceAtLeast(0f),
-                (corner - inset).coerceAtLeast(0f),
-            ),
+            color = look.edge,
+            cornerRadius = CornerRadius(corner, corner),
             style = Stroke(width = stroke),
         )
+
+        // Moulded inner lip.
+        look.bevel?.let { bevel ->
+            val inset = stroke * 1.4f
+            drawRoundRect(
+                color = bevel,
+                topLeft = Offset(inset, inset),
+                size = Size(w - inset * 2f, h - inset * 2f),
+                cornerRadius = CornerRadius(
+                    (corner - inset).coerceAtLeast(0f),
+                    (corner - inset).coerceAtLeast(0f),
+                ),
+                style = Stroke(width = stroke),
+            )
+        }
     }
 
     // Specular streak across the plastic.
@@ -183,6 +188,24 @@ private fun DrawScope.drawShell(look: CassetteLook, w: Float, h: Float) {
         }
     }
 
+    // Broad highlight where the light falls across the moulding.
+    look.specular?.let { spec ->
+        val specularClip = Path().apply {
+            addRoundRect(RoundRect(Rect(0f, 0f, w, h), CornerRadius(corner, corner)))
+        }
+        clipPath(specularClip) {
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(spec, Color.Transparent),
+                    center = Offset(w * 0.30f, h * 0.24f),
+                    radius = w * 0.42f,
+                ),
+                radius = w * 0.42f,
+                center = Offset(w * 0.30f, h * 0.24f),
+            )
+        }
+    }
+
     if (look.detailed) {
         // Write-protect notches.
         listOf(0.10f, 0.845f).forEach { x ->
@@ -202,7 +225,13 @@ private fun DrawScope.drawShell(look: CassetteLook, w: Float, h: Float) {
             Offset(w * 0.06f, h * 0.925f),
             Offset(w * 0.94f, h * 0.925f),
         ).forEach { center ->
-            drawCircle(look.shellBottom, screwRadius, center)
+            drawCircle(
+                color = look.occlusion
+                    ?.let { lerp(look.shellBottom, Color.White, 0.20f) }
+                    ?: look.shellBottom,
+                radius = screwRadius,
+                center = center,
+            )
             drawCircle(look.edge, screwRadius, center, style = Stroke(width = stroke))
             drawLine(
                 color = look.line,
@@ -220,6 +249,18 @@ private fun DrawScope.drawShell(look: CassetteLook, w: Float, h: Float) {
     val labelWidth = w * 0.86f
     val labelHeight = h * 0.40f
     val labelCorner = h * 0.03f * look.cornerScale
+
+    // Contact shadow around the sticker, so it sits on the shell.
+    look.occlusion?.let { ao ->
+        drawRoundRect(
+            color = ao,
+            topLeft = Offset(labelLeft, labelTop),
+            size = Size(labelWidth, labelHeight),
+            cornerRadius = CornerRadius(labelCorner, labelCorner),
+            style = Stroke(width = stroke * 2.6f),
+        )
+    }
+
     drawRoundRect(
         color = look.label,
         topLeft = Offset(labelLeft, labelTop),
@@ -302,6 +343,17 @@ private fun DrawScope.drawShell(look: CassetteLook, w: Float, h: Float) {
             style = Stroke(width = stroke),
         )
 
+        // Inner shadow around the opening.
+        look.occlusion?.let { ao ->
+            drawRoundRect(
+                color = ao,
+                topLeft = Offset(windowLeft, windowTop),
+                size = Size(windowWidth, windowHeight),
+                cornerRadius = CornerRadius(windowCorner, windowCorner),
+                style = Stroke(width = stroke * 2.4f),
+            )
+        }
+
         // Reflection across the glass.
         look.glass?.let { glass ->
             val windowClip = Path().apply {
@@ -337,6 +389,73 @@ private fun DrawScope.drawShell(look: CassetteLook, w: Float, h: Float) {
             drawCircle(look.recess, h * 0.024f, Offset(w * x, h * 0.905f))
         }
     }
+}
+
+/**
+ * Moulded shell lit from the top-left: body, beveled rim and a raised face plate.
+ * This is what makes the object read as thick plastic instead of a flat rectangle.
+ */
+private fun DrawScope.drawSteppedShell(
+    look: CassetteLook,
+    w: Float,
+    h: Float,
+    corner: Float,
+    stroke: Float,
+) {
+    val inset = h * 0.045f
+    val faceCorner = (corner - inset).coerceAtLeast(0f)
+    val light = look.bevel ?: Color.White
+    val shade = look.occlusion ?: look.edge
+
+    // Body.
+    drawRoundRect(
+        brush = Brush.linearGradient(
+            colors = listOfNotNull(look.shellTop, look.shellMid, look.shellBottom),
+            start = Offset(0f, 0f),
+            end = Offset(w, h),
+        ),
+        cornerRadius = CornerRadius(corner, corner),
+    )
+
+    // Beveled rim: lit top-left, shaded bottom-right.
+    drawRoundRect(
+        brush = Brush.linearGradient(
+            colors = listOf(light, Color.Transparent, shade),
+            start = Offset(0f, 0f),
+            end = Offset(w, h),
+        ),
+        cornerRadius = CornerRadius(corner, corner),
+        style = Stroke(width = stroke * 1.8f),
+    )
+
+    // Raised face plate.
+    drawRoundRect(
+        brush = Brush.linearGradient(
+            colors = listOf(
+                lerp(look.shellTop, Color.White, 0.12f),
+                look.shellMid ?: look.shellTop,
+                lerp(look.shellBottom, Color.Black, 0.10f),
+            ),
+            start = Offset(inset, inset),
+            end = Offset(w - inset, h - inset),
+        ),
+        topLeft = Offset(inset, inset),
+        size = Size(w - inset * 2f, h - inset * 2f),
+        cornerRadius = CornerRadius(faceCorner, faceCorner),
+    )
+
+    // Step edge: highlight above, shadow below.
+    drawRoundRect(
+        brush = Brush.linearGradient(
+            colors = listOf(light, Color.Transparent, shade),
+            start = Offset(inset, inset),
+            end = Offset(w - inset, h - inset),
+        ),
+        topLeft = Offset(inset, inset),
+        size = Size(w - inset * 2f, h - inset * 2f),
+        cornerRadius = CornerRadius(faceCorner, faceCorner),
+        style = Stroke(width = stroke * 0.9f),
+    )
 }
 
 private fun DrawScope.drawReels(angleDegrees: Float, look: CassetteLook, w: Float, h: Float) {
@@ -375,6 +494,10 @@ private fun DrawScope.drawReel(
     tapePackScale: Float,
 ) {
     drawCircle(look.recess, radius, center)
+    // Inner shadow so the well reads as recessed into the shell.
+    look.occlusion?.let { ao ->
+        drawCircle(ao, radius, center, style = Stroke(width = radius * 0.16f))
+    }
     drawCircle(look.edge, radius, center, style = Stroke(width = stroke))
     drawCircle(
         color = look.tape,

@@ -89,7 +89,8 @@ Key files and tuning points:
   BRUTALIST, REALISM) → `PlayerSkin` (backdrop, surfaces, content/muted/accent
   colours, control + panel shapes, border width, shadow, status-bar contrast) and
   `CassetteLook` (everything the cassette draws, including the optional
-  `shellMid`/`sheen`/`bevel`/`glass` realism shading). `CassettePlayer` takes a
+  `shellMid`/`sheen`/`bevel`/`glass`/`specular`/`occlusion` shading and the
+  `steppedShell` moulded-rim renderer). `CassettePlayer` takes a
   `CassetteLook`; it must not read `MaterialTheme` directly. A style owns the whole
   now-playing screen — backdrop, top bar, play/favourite/sleep/stop and the sleep
   dialog — but nothing else: lists, mini player and nav stay on the Material theme.
