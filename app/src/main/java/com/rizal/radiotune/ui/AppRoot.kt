@@ -149,14 +149,24 @@ fun AppRoot(modifier: Modifier = Modifier) {
             Row(
                 modifier = Modifier
                     .fillMaxSize()
-                    .windowInsetsPadding(
-                        WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal),
+                    // Only the list routes get insets here; the player screen owns
+                    // its own, so applying both would double the padding.
+                    .then(
+                        if (showNavigation) {
+                            Modifier.windowInsetsPadding(
+                                WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal),
+                            )
+                        } else {
+                            Modifier
+                        },
                     )
                     .padding(innerPadding),
             ) {
                 if (showNavigation && isLandscape) {
                     NavigationRail(
-                        windowInsets = WindowInsets(0, 0, 0, 0),
+                        // Keep the rail's content clear of the status bar; the
+                        // horizontal insets are handled by the shell Row.
+                        windowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Top),
                         modifier = Modifier.fillMaxHeight(),
                     ) {
                         NavigationRailItem(
@@ -183,7 +193,7 @@ fun AppRoot(modifier: Modifier = Modifier) {
                         .weight(1f)
                         .fillMaxHeight()
                         .then(
-                            if (isLandscape) {
+                            if (isLandscape && showNavigation) {
                                 Modifier.windowInsetsPadding(
                                     WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom),
                                 )

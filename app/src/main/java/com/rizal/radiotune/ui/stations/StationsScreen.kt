@@ -1,5 +1,6 @@
 package com.rizal.radiotune.ui.stations
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,13 +17,18 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -66,7 +72,16 @@ fun StationsScreen(
         if (nearEnd) viewModel.loadMore()
     }
 
-    Column(modifier.fillMaxSize()) {
+    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
+    var searchFocused by remember { mutableStateOf(false) }
+    val searching = state.query.isNotEmpty() || searchFocused
+    val barCollapsed = scrollBehavior.state.collapsedFraction >= 1f
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .nestedScroll(scrollBehavior.nestedScrollConnection),
+    ) {
         TopAppBar(
             title = {
                 Text(viewModel.countryName, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -76,16 +91,21 @@ fun StationsScreen(
                     Icon(painterResource(R.drawable.ic_arrow_back), contentDescription = "Back")
                 }
             },
+            scrollBehavior = scrollBehavior,
         )
 
-        SearchField(
-            value = state.query,
-            onValueChange = viewModel::onQueryChange,
-            placeholder = "Search stations",
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-        )
+        // Collapses with the bar unless the user is actually searching.
+        AnimatedVisibility(visible = !barCollapsed || searching) {
+            SearchField(
+                value = state.query,
+                onValueChange = viewModel::onQueryChange,
+                placeholder = "Search stations",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp)
+                    .onFocusChanged { searchFocused = it.isFocused },
+            )
+        }
 
         when {
             state.isLoading -> LoadingView()

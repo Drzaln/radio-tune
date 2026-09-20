@@ -110,6 +110,10 @@ Key files and tuning points:
   freeing the full height for lists. Countries, stations and favourites use
   `LazyVerticalGrid` with adaptive columns — one column in portrait, two or three
   in landscape — so they never look like a stretched single column.
+- List screens collapse their app bar on scroll (`enterAlwaysScrollBehavior` +
+  `nestedScroll`); the search field hides with it unless the user is searching
+  (focused or non-empty). Insets are applied once, at the shell, and only for the
+  list routes — the player screen owns its own so it is not double-padded.
 - Landscape now-playing: `ui/player/RadioLandscape.kt` — cassette on the left and a
   working retro radio chassis on the right (power, play/pause, favourite, sleep
   cycling, tuning scan, volume). Orientation is decided in `PlayerScreen` with

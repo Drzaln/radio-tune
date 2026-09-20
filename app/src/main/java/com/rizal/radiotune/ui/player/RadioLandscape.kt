@@ -71,7 +71,7 @@ fun RadioLandscape(
     var showStylePicker by remember { mutableStateOf(false) }
     val station = state.current
 
-    Column(Modifier.fillMaxSize().padding(horizontal = 8.dp, vertical = 6.dp)) {
+    Column(Modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 8.dp)) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = actions.onBack) {
                 Icon(
@@ -95,10 +95,13 @@ fun RadioLandscape(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             BoxWithConstraints(
-                modifier = Modifier.weight(1f).fillMaxHeight(),
+                modifier = Modifier.weight(CASSETTE_PANE_WEIGHT).fillMaxHeight(),
                 contentAlignment = Alignment.Center,
             ) {
-                val cassetteWidth = minOf(maxWidth * 0.74f, maxHeight * 0.74f / CASSETTE_ASPECT)
+                val cassetteWidth = minOf(
+                    maxWidth * CASSETTE_PANE_FILL,
+                    maxHeight * CASSETTE_PANE_FILL / CASSETTE_ASPECT,
+                )
                 CassettePlayer(
                     look = skin.cassette,
                     playing = state.isPlaying,
@@ -109,10 +112,10 @@ fun RadioLandscape(
                 )
             }
 
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(16.dp))
 
             Column(
-                modifier = Modifier.weight(1f).fillMaxHeight(),
+                modifier = Modifier.weight(CONTROL_PANE_WEIGHT).fillMaxHeight(),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 DialWindow(
@@ -457,6 +460,11 @@ private fun stableNeedle(seed: String?): Float {
     val bucket = (seed.hashCode().toLong() and 0x7FFFFFFFL) % 100L
     return 0.06f + bucket / 100f * 0.88f
 }
+
+/** The controls get a little more room than the cassette, which is centred. */
+private const val CASSETTE_PANE_WEIGHT = 0.85f
+private const val CONTROL_PANE_WEIGHT = 1.15f
+private const val CASSETTE_PANE_FILL = 0.84f
 
 private val KNOB_SIZE = 64.dp
 private const val KNOB_TICKS = 11

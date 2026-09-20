@@ -8,9 +8,11 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -33,8 +35,14 @@ fun FavoritesScreen(
     val favorites by viewModel.favorites.collectAsStateWithLifecycle()
     val favoriteIds = favorites.map { it.id }.toSet()
 
-    Column(modifier.fillMaxSize()) {
-        TopAppBar(title = { Text("Favorites") })
+    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .nestedScroll(scrollBehavior.nestedScrollConnection),
+    ) {
+        TopAppBar(title = { Text("Favorites") }, scrollBehavior = scrollBehavior)
 
         if (favorites.isEmpty()) {
             EmptyView("No favorites yet.\nTap the heart on any station to save it.")
