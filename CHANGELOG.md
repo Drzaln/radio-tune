@@ -3,6 +3,33 @@
 Notable changes to RadioTune. Versions follow the git tags (`vX.Y.Z`); the
 Android `versionCode` is derived as `major * 10000 + minor * 100 + patch`.
 
+## [1.8.0] - 2026-09-21
+
+### Added
+
+- **Tag/genre browsing and sorting**: a genre filter sits under the station
+  search, and a toolbar menu sorts the list by popularity, bitrate, codec or name.
+- **ICY now-playing titles**: streams that broadcast track metadata show the song
+  on the now-playing screen (both layouts), falling back to the station name.
+- **Favorites backup**: export the saved list to a JSON file and import it back
+  through the system file picker. Favorites can also be filtered by name, country
+  or tag, and long-press drag reorders them, with the order persisted.
+- **Automatic stream recovery**: transient network/IO failures retry with
+  exponential backoff instead of ending playback on the first drop.
+- Media notification taps now open the app.
+
+### Changed
+
+- Live-radio buffering is tuned for fast starts (small start buffer, live offset),
+  rather than the default VOD profile.
+- Duplicate directory entries are dropped per page — a `.pls` entry no longer
+  appears beside its direct stream, and repeated UUIDs collapse to one.
+- Station-load failures show short, friendly messages instead of raw exception
+  text, and a failed playback-service connection is reported with a retry action.
+- The active sleep timer is restored from the service, so it survives reconnects
+  and process death.
+- Favicons are requested at their display size instead of full resolution.
+
 ## [1.7.2] - 2026-09-19
 
 ### Fixed

@@ -8,15 +8,17 @@ Media3/ExoPlayer, no Hilt/Room/KSP.
 
 ## Features
 
-- Browse stations by country, search, and paginated lists via the
+- Browse stations by country, search, filter by genre/tag, and sort by popularity,
+  bitrate, codec or name — paginated lists via the
   [Radio Browser](https://www.radio-browser.info/) API
 - Background playback with a media notification and audio focus handling
+- Now-playing track titles from ICY metadata, with automatic stream recovery
 - A landscape retro-radio layout with working tuning and volume knobs
 - Side-rail navigation and adaptive list columns in landscape
 - Station artwork, and an animated cassette on the now-playing screen
 - Four player styles (Classic, Minimal, Realism, Semi-realism) with live previews
 - Sleep timer with a gentle fade-out
-- Favorites stored on device
+- Favorites stored on device, with reorder, search and JSON export/import
 - In-app update check against the latest GitHub release (no account, no token)
 
 ## Download
