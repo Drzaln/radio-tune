@@ -1,5 +1,6 @@
 package com.rizal.radiotune.playback
 
+import android.app.PendingIntent
 import android.content.Intent
 import android.os.Bundle
 import androidx.media3.common.AudioAttributes
@@ -12,6 +13,7 @@ import androidx.media3.session.SessionCommand
 import androidx.media3.session.SessionResult
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
+import com.rizal.radiotune.MainActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -45,6 +47,15 @@ class RadioPlayerService : MediaSessionService() {
             .build()
 
         mediaSession = MediaSession.Builder(this, player)
+            .setSessionActivity(
+                PendingIntent.getActivity(
+                    this,
+                    0,
+                    Intent(this, MainActivity::class.java)
+                        .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+                ),
+            )
             .setCallback(SessionCallback())
             .build()
     }
