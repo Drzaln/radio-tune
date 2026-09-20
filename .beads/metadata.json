@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "embedded",
+  "dolt_database": "radio_tune",
+  "project_id": "77631afc-9257-4603-995f-6888b7d1d794"
+}
