@@ -12,6 +12,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.io.IOException
+import java.net.ConnectException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 
 data class StationsUiState(
     val stations: List<Station> = emptyList(),
@@ -88,7 +92,7 @@ class StationsViewModel(
                         it.copy(
                             isLoading = false,
                             isLoadingMore = false,
-                            error = throwable.message ?: "Could not load stations",
+                            error = throwable.toUserMessage(),
                         )
                     }
                 }
@@ -98,4 +102,15 @@ class StationsViewModel(
     private companion object {
         const val SEARCH_DEBOUNCE_MS = 350L
     }
+}
+
+private fun Throwable.toUserMessage(): String = when (this) {
+    is UnknownHostException,
+    is ConnectException,
+    is SocketTimeoutException,
+    -> "Network problem — check your connection"
+
+    is IOException -> "Could not reach the station directory"
+
+    else -> "Could not load stations"
 }
