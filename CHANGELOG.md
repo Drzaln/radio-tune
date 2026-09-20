@@ -3,6 +3,22 @@
 Notable changes to RadioTune. Versions follow the git tags (`vX.Y.Z`); the
 Android `versionCode` is derived as `major * 10000 + minor * 100 + patch`.
 
+## [1.3.0] - 2026-09-19
+
+### Added
+
+- Selectable player styles: **Classic** (retro cassette deck), **Minimal** and
+  **Brutalist**. A style skins the whole now-playing screen — backdrop, top bar,
+  play/favourite/sleep and stop controls, the sleep dialog and the cassette —
+  while lists, mini player and navigation stay on the Material theme.
+- Style picker with live animated previews, opened from the palette action on
+  the now-playing screen. The choice is remembered.
+
+### Changed
+
+- The cassette is now drawn from a style-driven `CassetteLook` instead of
+  reading the Material theme directly.
+
 ## [1.2.1] - 2026-09-19
 
 ### Changed
