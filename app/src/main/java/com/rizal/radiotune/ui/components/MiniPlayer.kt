@@ -48,7 +48,11 @@ fun MiniPlayer(
                 .padding(start = 12.dp, end = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            StationAvatar(size = 42.dp, highlighted = state.isPlaying)
+            StationAvatar(
+                size = 42.dp,
+                highlighted = state.isPlaying,
+                imageUrl = station.faviconUrl,
+            )
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text(

@@ -21,3 +21,8 @@
 
 # Media3
 -dontwarn androidx.media3.**
+
+# Coil 3 network fetcher is registered through ServiceLoader; keep the target so
+# it is not stripped and images keep loading in release builds.
+-keep class * implements coil3.util.FetcherServiceLoaderTarget { *; }
+-keep class * implements coil3.util.DecoderServiceLoaderTarget { *; }

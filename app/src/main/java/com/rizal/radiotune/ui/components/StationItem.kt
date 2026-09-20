@@ -3,6 +3,7 @@ package com.rizal.radiotune.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -16,10 +17,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import coil3.compose.AsyncImage
 import com.rizal.radiotune.R
 import com.rizal.radiotune.data.model.Station
 
@@ -28,6 +31,7 @@ fun StationAvatar(
     modifier: Modifier = Modifier,
     size: Dp = 44.dp,
     highlighted: Boolean = false,
+    imageUrl: String? = null,
 ) {
     val container = if (highlighted) {
         MaterialTheme.colorScheme.primary
@@ -46,12 +50,21 @@ fun StationAvatar(
             .background(container),
         contentAlignment = Alignment.Center,
     ) {
+        // Drawn first so it shows through when there is no artwork or it fails.
         Icon(
             painter = painterResource(R.drawable.ic_radio),
             contentDescription = null,
             tint = content,
             modifier = Modifier.size(size * 0.55f),
         )
+        if (!imageUrl.isNullOrBlank()) {
+            AsyncImage(
+                model = imageUrl,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
     }
 }
 
@@ -72,7 +85,7 @@ fun StationListItem(
         } else {
             ListItemDefaults.colors()
         },
-        leadingContent = { StationAvatar(highlighted = isActive) },
+        leadingContent = { StationAvatar(highlighted = isActive, imageUrl = station.faviconUrl) },
         headlineContent = {
             Text(
                 text = station.name,

@@ -39,8 +39,8 @@ import androidx.compose.ui.unit.dp
 import com.rizal.radiotune.R
 import com.rizal.radiotune.data.model.Station
 import com.rizal.radiotune.playback.PlayerUiState
+import com.rizal.radiotune.ui.components.CassettePlayer
 import com.rizal.radiotune.ui.components.EmptyView
-import com.rizal.radiotune.ui.components.StationAvatar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -85,8 +85,13 @@ fun PlayerScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            StationAvatar(size = 160.dp, highlighted = state.isPlaying)
-            Spacer(Modifier.height(28.dp))
+            CassettePlayer(
+                playing = state.isPlaying,
+                buffering = state.isBuffering,
+                artworkUrl = station.faviconUrl,
+                width = 264.dp,
+            )
+            Spacer(Modifier.height(24.dp))
 
             Text(
                 text = station.name,

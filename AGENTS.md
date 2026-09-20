@@ -15,14 +15,18 @@ Guidance for agents working in this repository.
 ## Stack
 
 Kotlin 2.4.20 · Jetpack Compose (Material3) · Media3 1.8.1 · Retrofit + OkHttp +
-kotlinx.serialization · DataStore · manual DI (`AppContainer`), no Hilt/Room/KSP.
+kotlinx.serialization · DataStore · Coil 3 (station favicons) · manual DI
+(`AppContainer`), no Hilt/Room/KSP.
 
 - `minSdk 24`, `targetSdk 36`, `compileSdk 36`
 - AGP 8.13.2 / Gradle 8.13. Do **not** bump AndroidX to versions requiring
   AGP 9.1+ / compileSdk 37 (core-ktx 1.18+, compose BOM 2026.x, lifecycle 2.10+,
   media3 1.11+). Keep the versions in `gradle/libs.versions.toml`.
-- Release APK is ~2.2 MB. Keep it small: XML vectors only, no image loader,
-  no extra DI/KSP libraries, R8 + resource shrinking on.
+- Release APK is ~2.4 MB. Keep it small: XML vectors for icons (the cassette is
+  drawn with `Canvas`, no assets), Coil for station favicons, no extra DI/KSP/Room
+  libraries, R8 + resource shrinking on.
+- Do **not** bump Coil above `3.4.0`: 3.5+ pulls Compose Multiplatform 1.11/1.12,
+  which requires AGP 9.1+ / compileSdk 37.
 
 ## Build & verify
 
@@ -78,6 +82,9 @@ Key files and tuning points:
 - Update source + asset names: `data/update/UpdateConfig.kt`
 - Update check throttle: `data/update/UpdateRepository.kt` (`CHECK_INTERVAL_MS`, 12h)
 - Playlist (.pls/.m3u) resolution: `RadioRepository.resolvePlayableUrl`
+- Player artwork: `ui/components/CassettePlayer.kt` — Canvas cassette whose reels
+  spin on play (freeze in place on pause); artwork fills the label area. Favicons
+  load through Coil in `StationAvatar` (`AsyncImage` over the vector fallback).
 
 ## Playback notes
 
