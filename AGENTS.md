@@ -85,6 +85,16 @@ Key files and tuning points:
 - Player artwork: `ui/components/CassettePlayer.kt` — Canvas cassette whose reels
   spin on play (freeze in place on pause); artwork fills the label area. Favicons
   load through Coil in `StationAvatar` (`AsyncImage` over the vector fallback).
+- Player styles: `ui/theme/PlayerStyle.kt` — `PlayerStyle` (CLASSIC, MINIMAL,
+  BRUTALIST) → `PlayerSkin` (backdrop, surfaces, content/muted/accent colours,
+  control + panel shapes, border width, shadow, status-bar contrast) and
+  `CassetteLook` (everything the cassette draws). `CassettePlayer` takes a
+  `CassetteLook`; it must not read `MaterialTheme` directly. A style owns the whole
+  now-playing screen — backdrop, top bar, play/favourite/sleep/stop and the sleep
+  dialog — but nothing else: lists, mini player and nav stay on the Material theme.
+  Styles with fixed palettes intentionally ignore dynamic colour on that screen.
+- Style preference: `SettingsRepository` (stores the enum name) → `PlayerViewModel`
+  → picker dialog with live animated previews on the player screen.
 
 ## Playback notes
 

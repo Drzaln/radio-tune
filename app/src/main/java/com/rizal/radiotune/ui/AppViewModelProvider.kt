@@ -20,6 +20,7 @@ object AppViewModelProvider {
             PlayerViewModel(
                 radioRepository = container.radioRepository,
                 favoritesRepository = container.favoritesRepository,
+                settingsRepository = container.settingsRepository,
                 controller = container.playerController,
             )
         }

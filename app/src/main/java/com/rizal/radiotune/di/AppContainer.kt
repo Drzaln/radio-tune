@@ -5,6 +5,7 @@ import com.rizal.radiotune.data.local.dataStore
 import com.rizal.radiotune.data.remote.NetworkFactory
 import com.rizal.radiotune.data.repository.FavoritesRepository
 import com.rizal.radiotune.data.repository.RadioRepository
+import com.rizal.radiotune.data.repository.SettingsRepository
 import com.rizal.radiotune.data.update.ApkDownloader
 import com.rizal.radiotune.data.update.UpdateChecker
 import com.rizal.radiotune.data.update.UpdateRepository
@@ -25,6 +26,10 @@ class AppContainer(context: Context) {
 
     val favoritesRepository: FavoritesRepository by lazy {
         FavoritesRepository(appContext.dataStore, json)
+    }
+
+    val settingsRepository: SettingsRepository by lazy {
+        SettingsRepository(appContext.dataStore)
     }
 
     val playerController: PlayerController by lazy { PlayerController(appContext, json) }

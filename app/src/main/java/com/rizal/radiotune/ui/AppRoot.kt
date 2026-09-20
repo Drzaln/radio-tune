@@ -64,6 +64,7 @@ fun AppRoot(modifier: Modifier = Modifier) {
     val playerState by playerViewModel.playerState.collectAsStateWithLifecycle()
     val favorites by playerViewModel.favorites.collectAsStateWithLifecycle()
     val favoriteIds = remember(favorites) { favorites.map { it.id }.toSet() }
+    val playerStyle by playerViewModel.playerStyle.collectAsStateWithLifecycle()
 
     val updateViewModel: UpdateViewModel = viewModel(factory = AppViewModelProvider.Factory)
     val updateState by updateViewModel.state.collectAsStateWithLifecycle()
@@ -185,6 +186,8 @@ fun AppRoot(modifier: Modifier = Modifier) {
                 PlayerScreen(
                     state = playerState,
                     favoriteIds = favoriteIds,
+                    playerStyle = playerStyle,
+                    onSelectStyle = playerViewModel::setPlayerStyle,
                     onBack = { navController.popBackStack() },
                     onTogglePlayPause = playerViewModel::togglePlayPause,
                     onStop = playerViewModel::stop,
