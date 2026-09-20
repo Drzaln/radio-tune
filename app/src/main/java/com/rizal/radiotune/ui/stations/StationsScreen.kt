@@ -5,12 +5,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -37,6 +38,8 @@ import com.rizal.radiotune.ui.components.LoadingView
 import com.rizal.radiotune.ui.components.SearchField
 import com.rizal.radiotune.ui.components.StationListItem
 
+private val STATION_COLUMN_MIN_WIDTH = 320.dp
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StationsScreen(
@@ -50,11 +53,11 @@ fun StationsScreen(
 ) {
     val viewModel: StationsViewModel = viewModel(factory = AppViewModelProvider.Factory)
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val listState = rememberLazyListState()
+    val gridState = rememberLazyGridState()
 
     val nearEnd by remember {
         derivedStateOf {
-            val lastVisible = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+            val lastVisible = gridState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
             state.stations.isNotEmpty() && lastVisible >= state.stations.size - 4
         }
     }
@@ -93,7 +96,11 @@ fun StationsScreen(
             state.stations.isEmpty() ->
                 EmptyView("No stations found in ${viewModel.countryName}")
 
-            else -> LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+            else -> LazyVerticalGrid(
+                columns = GridCells.Adaptive(minSize = STATION_COLUMN_MIN_WIDTH),
+                state = gridState,
+                modifier = Modifier.fillMaxSize(),
+            ) {
                 items(state.stations, key = { it.id }) { station ->
                     StationListItem(
                         station = station,
@@ -108,11 +115,10 @@ fun StationsScreen(
                         },
                         onToggleFavorite = { onToggleFavorite(station) },
                     )
-                    HorizontalDivider()
                 }
 
                 if (state.isLoadingMore) {
-                    item {
+                    item(span = { GridItemSpan(maxLineSpan) }) {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()

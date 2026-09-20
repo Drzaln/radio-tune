@@ -10,12 +10,22 @@ import androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -96,21 +106,60 @@ fun AppRoot(modifier: Modifier = Modifier) {
 
     RequestNotificationPermission()
 
-    Scaffold(
-        modifier = modifier,
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        bottomBar = {
-            if (showBottomBar) {
-                Column {
-                    MiniPlayer(
-                        state = playerState,
-                        onTogglePlayPause = playerViewModel::togglePlayPause,
-                        onOpen = { navController.openPlayer() },
-                        onStop = playerViewModel::stop,
+    BoxWithConstraints(modifier.fillMaxSize()) {
+        // Landscape has little vertical room, so navigation moves to a side rail and
+        // the mini player docks at the bottom of the content instead of stacking.
+        val isLandscape = maxWidth > maxHeight
+        val showNavigation = showBottomBar && currentRoute != null
+
+        Scaffold(
+            contentWindowInsets = WindowInsets(0, 0, 0, 0),
+            snackbarHost = { SnackbarHost(snackbarHostState) },
+            bottomBar = {
+                if (showNavigation && !isLandscape) {
+                    Column {
+                        MiniPlayer(
+                            state = playerState,
+                            onTogglePlayPause = playerViewModel::togglePlayPause,
+                            onOpen = { navController.openPlayer() },
+                            onStop = playerViewModel::stop,
+                        )
+                        NavigationBar {
+                            NavigationBarItem(
+                                selected = currentRoute == Routes.COUNTRIES,
+                                onClick = { navController.switchTab(Routes.COUNTRIES) },
+                                icon = {
+                                    Icon(painterResource(R.drawable.ic_radio), contentDescription = null)
+                                },
+                                label = { Text("Browse") },
+                            )
+                            NavigationBarItem(
+                                selected = currentRoute == Routes.FAVORITES,
+                                onClick = { navController.switchTab(Routes.FAVORITES) },
+                                icon = {
+                                    Icon(painterResource(R.drawable.ic_favorite), contentDescription = null)
+                                },
+                                label = { Text("Favorites") },
+                            )
+                        }
+                    }
+                }
+            },
+        ) { innerPadding ->
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .windowInsetsPadding(
+                        WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal),
                     )
-                    NavigationBar {
-                        NavigationBarItem(
+                    .padding(innerPadding),
+            ) {
+                if (showNavigation && isLandscape) {
+                    NavigationRail(
+                        windowInsets = WindowInsets(0, 0, 0, 0),
+                        modifier = Modifier.fillMaxHeight(),
+                    ) {
+                        NavigationRailItem(
                             selected = currentRoute == Routes.COUNTRIES,
                             onClick = { navController.switchTab(Routes.COUNTRIES) },
                             icon = {
@@ -118,7 +167,7 @@ fun AppRoot(modifier: Modifier = Modifier) {
                             },
                             label = { Text("Browse") },
                         )
-                        NavigationBarItem(
+                        NavigationRailItem(
                             selected = currentRoute == Routes.FAVORITES,
                             onClick = { navController.switchTab(Routes.FAVORITES) },
                             icon = {
@@ -128,13 +177,25 @@ fun AppRoot(modifier: Modifier = Modifier) {
                         )
                     }
                 }
-            }
-        },
-    ) { innerPadding ->
-        NavHost(
-            navController = navController,
-            startDestination = Routes.COUNTRIES,
-            modifier = Modifier.padding(innerPadding),
+
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .then(
+                            if (isLandscape) {
+                                Modifier.windowInsetsPadding(
+                                    WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom),
+                                )
+                            } else {
+                                Modifier
+                            },
+                        ),
+                ) {
+                    NavHost(
+                        navController = navController,
+                        startDestination = Routes.COUNTRIES,
+                        modifier = Modifier.weight(1f),
             enterTransition = {
                 when (targetState.destination.route) {
                     Routes.PLAYER ->
@@ -220,6 +281,18 @@ fun AppRoot(modifier: Modifier = Modifier) {
                     onTogglePlayPause = playerViewModel::togglePlayPause,
                     onToggleFavorite = playerViewModel::toggleFavorite,
                 )
+            }
+        }
+
+                    if (showNavigation && isLandscape) {
+                        MiniPlayer(
+                            state = playerState,
+                            onTogglePlayPause = playerViewModel::togglePlayPause,
+                            onOpen = { navController.openPlayer() },
+                            onStop = playerViewModel::stop,
+                        )
+                    }
+                }
             }
         }
     }

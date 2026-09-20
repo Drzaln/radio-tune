@@ -105,6 +105,11 @@ Key files and tuning points:
   shading is re-rendered on each animation frame.
 - Style preference: `SettingsRepository` (stores the enum name) → `PlayerViewModel`
   → picker dialog with live animated previews on the player screen.
+- Landscape shell: `AppRoot` watches `maxWidth > maxHeight` and moves navigation
+  into a `NavigationRail` with the mini player docked at the bottom of the content,
+  freeing the full height for lists. Countries, stations and favourites use
+  `LazyVerticalGrid` with adaptive columns — one column in portrait, two or three
+  in landscape — so they never look like a stretched single column.
 - Landscape now-playing: `ui/player/RadioLandscape.kt` — cassette on the left and a
   working retro radio chassis on the right (power, play/pause, favourite, sleep
   cycling, tuning scan, volume). Orientation is decided in `PlayerScreen` with

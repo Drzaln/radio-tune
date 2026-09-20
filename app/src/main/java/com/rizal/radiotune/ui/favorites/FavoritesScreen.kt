@@ -2,15 +2,16 @@ package com.rizal.radiotune.ui.favorites
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.rizal.radiotune.data.model.Station
@@ -38,7 +39,10 @@ fun FavoritesScreen(
         if (favorites.isEmpty()) {
             EmptyView("No favorites yet.\nTap the heart on any station to save it.")
         } else {
-            LazyColumn(Modifier.fillMaxSize()) {
+            LazyVerticalGrid(
+                columns = GridCells.Adaptive(minSize = FAVORITE_COLUMN_MIN_WIDTH),
+                modifier = Modifier.fillMaxSize(),
+            ) {
                 items(favorites, key = { it.id }) { station ->
                     StationListItem(
                         station = station,
@@ -53,9 +57,10 @@ fun FavoritesScreen(
                         },
                         onToggleFavorite = { onToggleFavorite(station) },
                     )
-                    HorizontalDivider()
                 }
             }
         }
     }
 }
+
+private val FAVORITE_COLUMN_MIN_WIDTH = 320.dp
