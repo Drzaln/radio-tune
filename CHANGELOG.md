@@ -3,6 +3,21 @@
 Notable changes to RadioTune. Versions follow the git tags (`vX.Y.Z`); the
 Android `versionCode` is derived as `major * 10000 + minor * 100 + patch`.
 
+## [1.2.0] - 2026-09-19
+
+### Added
+
+- Animated cassette on the now-playing screen: the reels spin while playing,
+  slow down while buffering, and freeze in place when paused.
+- Station artwork (favicons) in the station lists, the mini player, and the
+  cassette label, falling back to the vector radio icon.
+- Directional navigation transitions: drill-downs slide in from the right, the
+  player slides up as a modal, and the bottom-nav tabs cross-fade.
+
+### Changed
+
+- Navigation no longer uses the navigation-compose 700 ms default cross-fade.
+
 ## [1.1.2] - 2026-09-19
 
 ### Fixed
