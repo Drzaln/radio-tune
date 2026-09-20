@@ -68,6 +68,7 @@ class RadioRepository(
         )
             .map { it.toStation() }
             .filter { it.playbackUrl.isNotBlank() }
+            .dedupe()
 
         if (offset == 0) {
             if (stationCache.size > MAX_CACHED_QUERIES) stationCache.clear()
@@ -86,6 +87,31 @@ class RadioRepository(
         if (url.isBlank() || !looksLikePlaylist(url)) return@withContext url
         runCatching { firstStreamFromPlaylist(url) }.getOrNull() ?: url
     }
+
+    /**
+     * Radio Browser lists the same station several times — a `.pls` entry next to
+     * its direct stream, or two UUIDs pointing at one host. Drops later copies
+     * within the page, keeping the first (the API orders by popularity). Applied
+     * per page so offset pagination is untouched.
+     */
+    private fun List<Station>.dedupe(): List<Station> {
+        val urls = HashSet<String>()
+        val names = HashSet<String>()
+        return filter { station ->
+            val urlKey = station.normalizedStreamUrl()
+            val nameKey = "${station.name.trim().lowercase()}|${station.countryCode.lowercase()}"
+            urls.add(urlKey) && names.add(nameKey)
+        }
+    }
+
+    private fun Station.normalizedStreamUrl(): String = playbackUrl
+        .substringBefore('?')
+        .substringBefore('#')
+        .removePrefix("https://")
+        .removePrefix("http://")
+        .removePrefix("www.")
+        .trimEnd('/')
+        .lowercase()
 
     private fun looksLikePlaylist(url: String): Boolean {
         val path = url.substringBefore('?').substringBefore('#').lowercase()
