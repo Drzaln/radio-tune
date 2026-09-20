@@ -3,6 +3,23 @@
 Notable changes to RadioTune. Versions follow the git tags (`vX.Y.Z`); the
 Android `versionCode` is derived as `major * 10000 + minor * 100 + patch`.
 
+## [1.7.1] - 2026-09-19
+
+### Fixed
+
+- The landscape player screen was double-padded: the shell applied safe-drawing
+  insets and `PlayerScreen` applied them again. The shell now insets only the list
+  routes, and the landscape player uses the same 16 dp content padding as the
+  lists.
+- The landscape navigation rail no longer sits under the status bar.
+
+### Changed
+
+- List screens collapse their app bar while scrolling; the search field goes with
+  it unless the user is searching (focused or with a query).
+- The landscape cassette is slightly smaller with a wider controls pane, so the
+  two sides balance.
+
 ## [1.7.0] - 2026-09-19
 
 ### Added
