@@ -52,12 +52,13 @@ class RadioRepository(
     suspend fun getStations(
         countryCode: String,
         query: String = "",
-        tag: String = "",
+        tags: List<String> = emptyList(),
         sort: StationSort = StationSort.POPULARITY,
         offset: Int = 0,
         limit: Int = PAGE_SIZE,
     ): List<Station> = withContext(Dispatchers.IO) {
-        val key = "$countryCode|${query.trim().lowercase()}|${tag.trim().lowercase()}|${sort.name}"
+        val tagParam = tags.filter { it.isNotBlank() }.joinToString(",")
+        val key = "$countryCode|${query.trim().lowercase()}|${tagParam.lowercase()}|${sort.name}"
         if (offset == 0) {
             stationCache[key]
                 ?.takeIf { it.isFresh(STATIONS_TTL_MS) }
@@ -67,7 +68,8 @@ class RadioRepository(
         val stations = api.searchStations(
             countryCode = countryCode.ifBlank { null },
             name = query.trim().ifBlank { null },
-            tag = tag.trim().ifBlank { null },
+            tag = tagParam.ifBlank { null },
+            tagExact = tagParam.isNotBlank(),
             order = sort.apiOrder,
             reverse = sort.reverse,
             limit = limit,

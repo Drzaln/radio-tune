@@ -22,7 +22,8 @@ import java.net.UnknownHostException
 data class StationsUiState(
     val stations: List<Station> = emptyList(),
     val query: String = "",
-    val tag: String = "",
+    val selectedTags: List<String> = emptyList(),
+    val availableTags: List<String> = emptyList(),
     val sort: StationSort = StationSort.POPULARITY,
     val isLoading: Boolean = false,
     val isLoadingMore: Boolean = false,
@@ -44,7 +45,6 @@ class StationsViewModel(
 
     private var loadJob: Job? = null
     private var queryJob: Job? = null
-    private var tagJob: Job? = null
     private var requestId = 0
     private var offset = 0
 
@@ -61,13 +61,17 @@ class StationsViewModel(
         }
     }
 
-    fun onTagChange(tag: String) {
-        _state.update { it.copy(tag = tag) }
-        tagJob?.cancel()
-        tagJob = viewModelScope.launch {
-            delay(SEARCH_DEBOUNCE_MS)
-            load(reset = true)
-        }
+    fun onTagToggle(tag: String) {
+        val selected = _state.value.selectedTags
+        val updated = if (tag in selected) selected - tag else selected + tag
+        _state.update { it.copy(selectedTags = updated) }
+        load(reset = true)
+    }
+
+    fun clearTags() {
+        if (_state.value.selectedTags.isEmpty()) return
+        _state.update { it.copy(selectedTags = emptyList()) }
+        load(reset = true)
     }
 
     fun onSortChange(sort: StationSort) {
@@ -100,7 +104,7 @@ class StationsViewModel(
                 repository.getStations(
                     countryCode = countryCode,
                     query = current.query,
-                    tag = current.tag,
+                    tags = current.selectedTags,
                     sort = current.sort,
                     offset = offset,
                     limit = RadioRepository.PAGE_SIZE,
@@ -114,12 +118,31 @@ class StationsViewModel(
             result
                 .onSuccess { page ->
                     offset += page.size
+                    val pageTags = page.flatMap { it.tags }
+                        .map { it.trim().lowercase() }
+                        .filter { it.isNotEmpty() }
+                        .groupingBy { it }
+                        .eachCount()
+                        .entries
+                        .sortedByDescending { it.value }
+                        .map { it.key }
                     _state.update { state ->
                         state.copy(
                             stations = if (reset) {
                                 page
                             } else {
                                 (state.stations + page).distinctBy { it.id }
+                            },
+                            // Only grow the picker while unfiltered, otherwise it
+                            // would shrink to the tags of the filtered results.
+                            availableTags = if (state.selectedTags.isEmpty()) {
+                                if (reset) {
+                                    pageTags.take(MAX_TAGS)
+                                } else {
+                                    (state.availableTags + pageTags).distinct().take(MAX_TAGS)
+                                }
+                            } else {
+                                state.availableTags
                             },
                             isLoading = false,
                             isLoadingMore = false,
@@ -143,6 +166,7 @@ class StationsViewModel(
 
     private companion object {
         const val SEARCH_DEBOUNCE_MS = 350L
+        const val MAX_TAGS = 24
     }
 }
 

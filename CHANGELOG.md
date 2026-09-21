@@ -3,6 +3,15 @@
 Notable changes to RadioTune. Versions follow the git tags (`vX.Y.Z`); the
 Android `versionCode` is derived as `major * 10000 + minor * 100 + patch`.
 
+## [1.8.4] - 2026-09-21
+
+### Changed
+
+- The genre filter moved beside the search bar as an icon with a count badge, and
+  it is now multi-select: pick any number of genres from the country's most common
+  tags (exact match, OR'd together), shown as removable chips under the search
+  field. The tag list no longer needs to be typed.
+
 ## [1.8.3] - 2026-09-21
 
 ### Changed

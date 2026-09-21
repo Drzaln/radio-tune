@@ -18,6 +18,7 @@ interface RadioBrowserApi {
         @Query("countrycode") countryCode: String? = null,
         @Query("name") name: String? = null,
         @Query("tag") tag: String? = null,
+        @Query("tagExact") tagExact: Boolean? = null,
         @Query("hidebroken") hideBroken: Boolean = true,
         @Query("is_https") isHttps: Boolean? = null,
         @Query("order") order: String = "clickcount",
