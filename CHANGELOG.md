@@ -3,6 +3,17 @@
 Notable changes to RadioTune. Versions follow the git tags (`vX.Y.Z`); the
 Android `versionCode` is derived as `major * 10000 + minor * 100 + patch`.
 
+## [1.9.1] - 2026-09-21
+
+### Changed
+
+- **Photo mode redrawn.** The first cut was Material controls on a wood gradient,
+  which read as an app rather than a set. The cabinet is now drawn end to end: wood
+  grain, bevel and slotted corner screws; a woven speaker cloth; a slide-rule FM
+  dial with printed frequencies, a red needle and backlit glass; knurled metal
+  knobs with cast shadows; and ivory piano keys that dip to brass when active.
+  Serif printed labels replace the app icons and Material typography.
+
 ## [1.9.0] - 2026-09-21
 
 ### Added

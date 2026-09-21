@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledIconButton
@@ -39,8 +38,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
@@ -79,7 +76,7 @@ fun RadioLandscape(
     val station = state.current
 
     if (photoMode) {
-        RadioPhotoBody(
+        RadioCabinet(
             skin = skin,
             state = state,
             favoriteIds = favoriteIds,
@@ -175,144 +172,6 @@ fun RadioLandscape(
                 showStylePicker = false
             },
             onDismiss = { showStylePicker = false },
-        )
-    }
-}
-
-/**
- * Photo mode: the whole screen becomes one radio cabinet — speaker grille on the
- * left, dial and controls on the right. No app chrome, so a photo of the phone
- * reads as a real set. Long-press the power knob to leave.
- */
-@Composable
-private fun RadioPhotoBody(
-    skin: PlayerSkin,
-    state: PlayerUiState,
-    favoriteIds: Set<String>,
-    actions: PlayerActions,
-    onTogglePhotoMode: () -> Unit,
-) {
-    val station = state.current
-    val cabinetShape = RoundedCornerShape(16.dp)
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    listOf(
-                        skin.cassette.shellTop,
-                        skin.cassette.shellMid ?: skin.cassette.shellBottom,
-                        skin.cassette.shellBottom,
-                    ),
-                ),
-            )
-            .padding(8.dp)
-            .clip(cabinetShape)
-            .border(2.dp, skin.outline, cabinetShape)
-            .padding(horizontal = 18.dp, vertical = 14.dp),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxSize(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            SpeakerGrille(
-                skin = skin,
-                modifier = Modifier.weight(GRILLE_PANE_WEIGHT).fillMaxHeight(),
-            )
-
-            Spacer(Modifier.width(18.dp))
-
-            Column(
-                modifier = Modifier.weight(CONTROL_PANE_WEIGHT).fillMaxHeight(),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                BrandPlate(skin = skin)
-
-                DialWindow(
-                    skin = skin,
-                    station = station,
-                    nowPlayingTitle = state.nowPlayingTitle,
-                    live = state.isPlaying,
-                    modifier = Modifier.weight(1f).fillMaxWidth(),
-                )
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    TuneKnob(skin = skin, enabled = station != null, onScan = actions.onScan)
-                    VolumeKnob(
-                        volume = state.volume,
-                        skin = skin,
-                        onSet = actions.onSetVolume,
-                    )
-                }
-
-                ControlRow(
-                    skin = skin,
-                    state = state,
-                    favoriteIds = favoriteIds,
-                    actions = actions,
-                    onTogglePhotoMode = onTogglePhotoMode,
-                )
-            }
-        }
-    }
-}
-
-/** Perforated speaker cloth, with the cabinet edges shaded in. */
-@Composable
-private fun SpeakerGrille(skin: PlayerSkin, modifier: Modifier = Modifier) {
-    Canvas(modifier.clip(RoundedCornerShape(12.dp))) {
-        drawRect(skin.cassette.recess)
-
-        val columns = GRILLE_COLUMNS
-        val stepX = size.width / columns
-        val rows = (size.height / stepX).toInt().coerceAtLeast(columns / 2)
-        val stepY = size.height / rows
-        val radius = minOf(stepX, stepY) * 0.20f
-
-        repeat(rows) { row ->
-            repeat(columns) { column ->
-                drawCircle(
-                    color = skin.cassette.line,
-                    radius = radius,
-                    center = Offset(stepX * (column + 0.5f), stepY * (row + 0.5f)),
-                    alpha = 0.80f,
-                )
-            }
-        }
-
-        drawRect(
-            brush = Brush.horizontalGradient(
-                listOf(
-                    Color.Black.copy(alpha = 0.40f),
-                    Color.Transparent,
-                    Color.Black.copy(alpha = 0.40f),
-                ),
-            ),
-        )
-    }
-}
-
-/** Small printed model plate above the dial. */
-@Composable
-private fun BrandPlate(skin: PlayerSkin) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(4.dp))
-            .background(skin.cassette.label)
-            .padding(horizontal = 8.dp, vertical = 3.dp),
-    ) {
-        Text(
-            text = "RADIOTUNE  ·  MODEL R-7",
-            style = MaterialTheme.typography.labelSmall,
-            color = skin.cassette.line,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
         )
     }
 }
@@ -643,10 +502,6 @@ private fun stableNeedle(seed: String?): Float {
 private const val CASSETTE_PANE_WEIGHT = 0.85f
 private const val CONTROL_PANE_WEIGHT = 1.15f
 private const val CASSETTE_PANE_FILL = 0.84f
-
-/** Photo mode: grille on the left, dial and controls on the right. */
-private const val GRILLE_PANE_WEIGHT = 0.80f
-private const val GRILLE_COLUMNS = 10
 
 private val KNOB_SIZE = 64.dp
 private const val KNOB_TICKS = 11
