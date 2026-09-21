@@ -16,7 +16,11 @@ Media3/ExoPlayer, no Hilt/Room/KSP.
 - A landscape retro-radio layout with working tuning and volume knobs
 - Side-rail navigation and adaptive list columns in landscape
 - Station artwork, and an animated cassette on the now-playing screen
-- Four player styles (Classic, Minimal, Realism, Semi-realism) with live previews
+- Four player styles (Classic, Minimal, Realism, Semi-realism) with live previews,
+  plus a **Radio** style — a walnut cabinet with a speaker grille, cream dial and
+  brass trim
+- **Photo mode**: long-press the power knob in landscape to go fullscreen — no
+  bars, no chrome, no cassette, just the radio body, kept awake for a photo
 - Sleep timer with a gentle fade-out
 - Favorites stored on device, with reorder, search and JSON export/import
 - In-app update check against the latest GitHub release (no account, no token)

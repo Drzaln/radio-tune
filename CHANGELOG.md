@@ -3,6 +3,23 @@
 Notable changes to RadioTune. Versions follow the git tags (`vX.Y.Z`); the
 Android `versionCode` is derived as `major * 10000 + minor * 100 + patch`.
 
+## [1.9.0] - 2026-09-21
+
+### Added
+
+- **Photo mode.** In the landscape player, long-press the power knob and the
+  screen becomes the radio itself: system bars, app chrome and the cassette
+  disappear, safe-drawing insets are dropped, and the cabinet fills the display.
+  The screen is kept awake and the notch area is used, so a photo of the phone
+  reads as a real set. Long-press the power knob again to leave.
+- **Radio style.** A new now-playing style with a walnut cabinet, perforated
+  speaker grille, cream dial face, brass trim and a printed model plate. The
+  grille and cabinet are drawn on Canvas from the skin, so no assets are added.
+
+### Changed
+
+- The landscape power knob is now tap (power) and long-press (photo mode).
+
 ## [1.8.4] - 2026-09-21
 
 ### Changed

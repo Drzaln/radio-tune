@@ -27,6 +27,7 @@ enum class PlayerStyle(val displayName: String) {
     MINIMAL("Minimal"),
     REALISM("Realism"),
     SEMI_REALISM("Semi-realism"),
+    RADIO("Radio"),
 }
 
 /** One printed stripe of a label. Weights are relative, not absolute. */
@@ -116,6 +117,7 @@ fun PlayerStyle.skin(): PlayerSkin = when (this) {
     PlayerStyle.MINIMAL -> minimalSkin(MaterialTheme.colorScheme, isSystemInDarkTheme())
     PlayerStyle.REALISM -> if (isSystemInDarkTheme()) RealismDark else RealismLight
     PlayerStyle.SEMI_REALISM -> if (isSystemInDarkTheme()) SemiRealismDark else SemiRealismLight
+    PlayerStyle.RADIO -> RadioSkin
 }
 
 // Warm veneer and cream label, like a 1980s cassette deck.
@@ -330,5 +332,47 @@ private val SemiRealismDark = PlayerSkin(
     panelShape = RoundedCornerShape(18.dp),
     borderWidth = 1.dp,
     shadowElevation = 16.dp,
+    darkStatusBarIcons = false,
+)
+
+// Walnut cabinet, cream dial face and brass trim. The body is a physical object,
+// so it does not follow the system theme. Photo mode draws its grille and panel
+// from these same fields (shell = cabinet, recess = grille cloth, outline = trim).
+private val RadioCassette = CassetteLook(
+    shellTop = Color(0xFF7A5433),
+    shellMid = Color(0xFF5C3D22),
+    shellBottom = Color(0xFF3A2513),
+    edge = Color(0xFF2A1A0C),
+    label = Color(0xFFEFE3C4),
+    stripe = Color(0xFFC8892B),
+    recess = Color(0xFF241608),
+    tape = Color(0xFF3B2A18),
+    hub = Color(0xFFC8892B),
+    spoke = Color(0xFFEFE3C4),
+    line = Color(0xFFB08D52),
+    bevel = Color(0x1AFFFFFF),
+    sheen = Color(0x12FFFFFF),
+    glass = Color(0x1FFFFFFF),
+    specular = Color(0x1FFFFFFF),
+    occlusion = Color(0x66000000),
+    steppedShell = true,
+    ribs = Color(0xFF2E1D0E),
+    crossScrews = true,
+    bottomPlate = true,
+)
+
+private val RadioSkin = PlayerSkin(
+    cassette = RadioCassette,
+    backdrop = Brush.verticalGradient(listOf(Color(0xFF6B4726), Color(0xFF2E1D0E))),
+    surface = Color(0xFFF3E7C6),
+    content = Color(0xFF2B1E12),
+    mutedContent = Color(0xFF6B563C),
+    accent = Color(0xFFC8892B),
+    onAccent = Color(0xFF2A1A08),
+    outline = Color(0xFFB9AE97),
+    controlShape = CircleShape,
+    panelShape = RoundedCornerShape(10.dp),
+    borderWidth = 1.dp,
+    shadowElevation = 18.dp,
     darkStatusBarIcons = false,
 )
