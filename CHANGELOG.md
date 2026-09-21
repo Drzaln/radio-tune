@@ -3,6 +3,15 @@
 Notable changes to RadioTune. Versions follow the git tags (`vX.Y.Z`); the
 Android `versionCode` is derived as `major * 10000 + minor * 100 + patch`.
 
+## [1.8.1] - 2026-09-21
+
+### Fixed
+
+- **1.8.0 crashed on launch.** The live buffering profile set a minimum buffer
+  (1500 ms) below the after-rebuffer threshold (2000 ms), which `DefaultLoadControl`
+  rejects, so the playback service threw while starting. The buffer sizes are now
+  ordered correctly (2500 / 1500 / 2000 ms).
+
 ## [1.8.0] - 2026-09-21
 
 ### Added

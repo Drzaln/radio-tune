@@ -188,9 +188,9 @@ class RadioPlayerService : MediaSessionService() {
         const val FADE_TICK_MS = 500L
         const val MAX_SLEEP_MINUTES = 24 * 60
 
-        const val MIN_BUFFER_MS = 1_500
+        const val MIN_BUFFER_MS = 2_500
         const val MAX_BUFFER_MS = 30_000
-        const val BUFFER_FOR_PLAYBACK_MS = 1_000
+        const val BUFFER_FOR_PLAYBACK_MS = 1_500
         const val BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS = 2_000
     }
 }
