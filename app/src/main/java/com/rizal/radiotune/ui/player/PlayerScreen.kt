@@ -3,8 +3,10 @@ package com.rizal.radiotune.ui.player
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
+import android.content.pm.ActivityInfo
 import android.os.Build
 import android.view.WindowManager
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -98,9 +100,12 @@ fun PlayerScreen(
     }
 
     DisposableEffect(photoMode) {
-        val window = view.context.findActivity()?.window
+        val activity = view.context.findActivity()
+        val window = activity?.window
         val controller = window?.let { WindowCompat.getInsetsController(it, view) }
-        if (photoMode && window != null && controller != null) {
+        if (photoMode && activity != null && window != null && controller != null) {
+            // Hold the phone in landscape and keep the display lit for the photo.
+            activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
             controller.systemBarsBehavior =
                 WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
             controller.hide(WindowInsetsCompat.Type.systemBars())
@@ -111,8 +116,14 @@ fun PlayerScreen(
                         WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
                 }
             }
+            Toast.makeText(
+                activity,
+                "Photo mode: rotation locked and screen kept on. Long-press ON/OFF to exit.",
+                Toast.LENGTH_LONG,
+            ).show()
         }
         onDispose {
+            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
             controller?.show(WindowInsetsCompat.Type.systemBars())
             window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
             if (window != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {

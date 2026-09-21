@@ -3,6 +3,13 @@
 Notable changes to RadioTune. Versions follow the git tags (`vX.Y.Z`); the
 Android `versionCode` is derived as `major * 10000 + minor * 100 + patch`.
 
+## [1.9.2] - 2026-09-21
+
+### Changed
+
+- Photo mode now locks the rotation to the landscape it was entered in and shows
+  a toast saying so, alongside the screen-on hint. Both are restored on exit.
+
 ## [1.9.1] - 2026-09-21
 
 ### Changed
