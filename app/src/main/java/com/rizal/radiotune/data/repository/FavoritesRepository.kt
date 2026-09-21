@@ -72,7 +72,9 @@ class FavoritesRepository(
 
     private fun decode(raw: String?): List<Station> {
         if (raw.isNullOrBlank()) return emptyList()
-        return runCatching { json.decodeFromString<List<Station>>(raw) }.getOrDefault(emptyList())
+        return runCatching { json.decodeFromString<List<Station>>(raw) }
+            .getOrDefault(emptyList())
+            .distinctBy { it.id }
     }
 
     private companion object {

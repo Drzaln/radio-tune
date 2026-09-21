@@ -42,6 +42,7 @@ class RadioRepository(
         val countries = api.getCountries()
             .map { it.toCountry() }
             .filter { it.code.isNotBlank() && it.stationCount > 0 }
+            .distinctBy { it.code }
             .sortedWith(compareByDescending<Country> { it.stationCount }.thenBy { it.name })
 
         countriesCache = TimedCache(countries)
@@ -101,12 +102,13 @@ class RadioRepository(
      * per page so offset pagination is untouched.
      */
     private fun List<Station>.dedupe(): List<Station> {
+        val ids = HashSet<String>()
         val urls = HashSet<String>()
         val names = HashSet<String>()
         return filter { station ->
             val urlKey = station.normalizedStreamUrl()
             val nameKey = "${station.name.trim().lowercase()}|${station.countryCode.lowercase()}"
-            urls.add(urlKey) && names.add(nameKey)
+            ids.add(station.id) && urls.add(urlKey) && names.add(nameKey)
         }
     }
 

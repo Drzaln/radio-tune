@@ -3,6 +3,16 @@
 Notable changes to RadioTune. Versions follow the git tags (`vX.Y.Z`); the
 Android `versionCode` is derived as `major * 10000 + minor * 100 + patch`.
 
+## [1.8.2] - 2026-09-21
+
+### Fixed
+
+- **Crash when searching.** A cancelled page load could still append its stations
+  to the next query's results, so the list ended up with the same station twice
+  and the grid rejected the duplicate key. Loads are now stamped with a request
+  id and ignored when stale, appended pages are de-duplicated by id, and the
+  country and favourite lists are de-duplicated too.
+
 ## [1.8.1] - 2026-09-21
 
 ### Fixed

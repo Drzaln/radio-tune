@@ -7,6 +7,7 @@ import com.rizal.radiotune.data.model.Station
 import com.rizal.radiotune.data.model.StationSort
 import com.rizal.radiotune.data.repository.RadioRepository
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -44,6 +45,7 @@ class StationsViewModel(
     private var loadJob: Job? = null
     private var queryJob: Job? = null
     private var tagJob: Job? = null
+    private var requestId = 0
     private var offset = 0
 
     init {
@@ -84,6 +86,7 @@ class StationsViewModel(
 
     private fun load(reset: Boolean) {
         loadJob?.cancel()
+        val token = ++requestId
         loadJob = viewModelScope.launch {
             if (reset) {
                 offset = 0
@@ -93,7 +96,7 @@ class StationsViewModel(
             }
 
             val current = _state.value
-            runCatching {
+            val result = runCatching {
                 repository.getStations(
                     countryCode = countryCode,
                     query = current.query,
@@ -103,11 +106,21 @@ class StationsViewModel(
                     limit = RadioRepository.PAGE_SIZE,
                 )
             }
+
+            // A newer load (or a cancelled one) must not touch the state: its page
+            // would otherwise be appended to a different query and repeat ids.
+            if (token != requestId) return@launch
+
+            result
                 .onSuccess { page ->
                     offset += page.size
-                    _state.update { current ->
-                        current.copy(
-                            stations = if (reset) page else current.stations + page,
+                    _state.update { state ->
+                        state.copy(
+                            stations = if (reset) {
+                                page
+                            } else {
+                                (state.stations + page).distinctBy { it.id }
+                            },
                             isLoading = false,
                             isLoadingMore = false,
                             endReached = page.size < RadioRepository.PAGE_SIZE,
@@ -116,6 +129,7 @@ class StationsViewModel(
                     }
                 }
                 .onFailure { throwable ->
+                    if (throwable is CancellationException) return@launch
                     _state.update {
                         it.copy(
                             isLoading = false,
