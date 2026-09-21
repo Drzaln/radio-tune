@@ -43,7 +43,7 @@ class RadioRepository(
             .map { it.toCountry() }
             .filter { it.code.isNotBlank() && it.stationCount > 0 }
             .distinctBy { it.code }
-            .sortedWith(compareByDescending<Country> { it.stationCount }.thenBy { it.name })
+            .sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.name })
 
         countriesCache = TimedCache(countries)
         countries

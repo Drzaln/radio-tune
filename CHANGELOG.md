@@ -3,6 +3,13 @@
 Notable changes to RadioTune. Versions follow the git tags (`vX.Y.Z`); the
 Android `versionCode` is derived as `major * 10000 + minor * 100 + patch`.
 
+## [1.8.3] - 2026-09-21
+
+### Changed
+
+- The country list is sorted alphabetically (case-insensitive) instead of by
+  station count.
+
 ## [1.8.2] - 2026-09-21
 
 ### Fixed
