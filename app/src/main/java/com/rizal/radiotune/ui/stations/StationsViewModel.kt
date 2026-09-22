@@ -117,8 +117,8 @@ class StationsViewModel(
 
             result
                 .onSuccess { page ->
-                    offset += page.size
-                    val pageTags = page.flatMap { it.tags }
+                    offset += page.rawSize
+                    val pageTags = page.stations.flatMap { it.tags }
                         .map { it.trim().lowercase() }
                         .filter { it.isNotEmpty() }
                         .groupingBy { it }
@@ -129,9 +129,9 @@ class StationsViewModel(
                     _state.update { state ->
                         state.copy(
                             stations = if (reset) {
-                                page
+                                page.stations
                             } else {
-                                (state.stations + page).distinctBy { it.id }
+                                (state.stations + page.stations).distinctBy { it.id }
                             },
                             // Only grow the picker while unfiltered, otherwise it
                             // would shrink to the tags of the filtered results.
@@ -146,7 +146,7 @@ class StationsViewModel(
                             },
                             isLoading = false,
                             isLoadingMore = false,
-                            endReached = page.size < RadioRepository.PAGE_SIZE,
+                            endReached = page.rawSize < RadioRepository.PAGE_SIZE,
                             error = null,
                         )
                     }

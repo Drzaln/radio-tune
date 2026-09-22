@@ -17,6 +17,16 @@ import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 
+/**
+ * One page of stations. [rawSize] is how many rows the API returned, which is what
+ * offset-based pagination must advance by; [stations] is the filtered, de-duplicated
+ * list actually shown.
+ */
+data class StationPage(
+    val stations: List<Station>,
+    val rawSize: Int,
+)
+
 class RadioRepository(
     private val api: RadioBrowserApi,
     baseClient: OkHttpClient,
@@ -32,7 +42,7 @@ class RadioRepository(
     @Volatile
     private var countriesCache: TimedCache<List<Country>>? = null
 
-    private val stationCache = ConcurrentHashMap<String, TimedCache<List<Station>>>()
+    private val stationCache = ConcurrentHashMap<String, TimedCache<StationPage>>()
 
     suspend fun getCountries(forceRefresh: Boolean = false): List<Country> = withContext(Dispatchers.IO) {
         countriesCache
@@ -56,7 +66,7 @@ class RadioRepository(
         sort: StationSort = StationSort.POPULARITY,
         offset: Int = 0,
         limit: Int = PAGE_SIZE,
-    ): List<Station> = withContext(Dispatchers.IO) {
+    ): StationPage = withContext(Dispatchers.IO) {
         val tagParam = tags.filter { it.isNotBlank() }.joinToString(",")
         val key = "$countryCode|${query.trim().lowercase()}|${tagParam.lowercase()}|${sort.name}"
         if (offset == 0) {
@@ -65,7 +75,7 @@ class RadioRepository(
                 ?.let { return@withContext it.value }
         }
 
-        val stations = api.searchStations(
+        val raw = api.searchStations(
             countryCode = countryCode.ifBlank { null },
             name = query.trim().ifBlank { null },
             tag = tagParam.ifBlank { null },
@@ -75,15 +85,22 @@ class RadioRepository(
             limit = limit,
             offset = offset,
         )
-            .map { it.toStation() }
-            .filter { it.playbackUrl.isNotBlank() }
-            .dedupe()
+
+        val page = StationPage(
+            stations = raw
+                .map { it.toStation() }
+                .filter { it.playbackUrl.isNotBlank() }
+                .dedupe(),
+            // Pagination must advance by the rows the API actually returned: the
+            // dropped blanks and duplicates still occupy offsets.
+            rawSize = raw.size,
+        )
 
         if (offset == 0) {
             if (stationCache.size > MAX_CACHED_QUERIES) stationCache.clear()
-            stationCache[key] = TimedCache(stations)
+            stationCache[key] = TimedCache(page)
         }
-        stations
+        page
     }
 
     /**

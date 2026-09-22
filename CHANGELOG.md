@@ -3,6 +3,16 @@
 Notable changes to RadioTune. Versions follow the git tags (`vX.Y.Z`); the
 Android `versionCode` is derived as `major * 10000 + minor * 100 + patch`.
 
+## [1.9.3] - 2026-09-21
+
+### Fixed
+
+- **Station lists stopped short.** Paging advanced by the de-duplicated page size,
+  so a page that lost any entry to the duplicate filter looked like the last page
+  and the list ended early — a country could show far fewer stations than it has.
+  The repository now reports the raw row count separately (`StationPage.rawSize`)
+  and paging uses that for both the offset and the end-of-list check.
+
 ## [1.9.2] - 2026-09-21
 
 ### Changed
